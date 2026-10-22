@@ -1,5 +1,13 @@
 // Ports between the use cases and platform adapters (contracts/domain-api.md).
-import type { DayKey, DaySummary, Profile, Reminder, Sip, SurfaceState, TodayState } from '@/domain/types';
+import type {
+  DayKey,
+  DaySummary,
+  Profile,
+  Reminder,
+  Sip,
+  SurfaceState,
+  TodayState,
+} from '@/domain/types';
 
 export interface SipRepository {
   /** Inserts a sip; records `dayGoalMl` as the day's goal if this is the day's first event. */

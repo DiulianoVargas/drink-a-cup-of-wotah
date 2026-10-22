@@ -65,8 +65,10 @@ export function createSipRepo(db: SqlDb): SipRepository {
     },
 
     goalFor(dayKey: DayKey) {
-      return db.getFirst<{ goal_ml: number }>('SELECT goal_ml FROM day WHERE day_key = ?', [dayKey])
-        ?.goal_ml ?? null;
+      return (
+        db.getFirst<{ goal_ml: number }>('SELECT goal_ml FROM day WHERE day_key = ?', [dayKey])
+          ?.goal_ml ?? null
+      );
     },
 
     setDayGoal(dayKey: DayKey, goalMl: number) {

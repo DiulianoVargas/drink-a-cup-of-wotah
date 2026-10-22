@@ -15,6 +15,17 @@ export const lightColors = {
   mint: '#BEEBD8',
   peach: '#FFD0BE',
   pink: '#F7C6D6',
+  // Extra component tokens from design/Wotah Telas.html (Home).
+  lineStrong: '#B9D3DC',
+  onWater: '#1F3E4D',
+  mintTint: '#E3F6EE',
+  mintInk: '#2C6652',
+  peachTint: '#FFE8DF',
+  peachInk: '#8A4A35',
+  toastBg: '#2B4656',
+  toastInk: '#F3F9FB',
+  toastAccent: '#CDEEF6',
+  scrim: 'rgba(43,70,86,0.22)',
 };
 
 export type ColorTokens = typeof lightColors;
@@ -34,6 +45,16 @@ export const darkColors: ColorTokens = {
   mint: '#8ECDB6',
   peach: '#E9B3A0',
   pink: '#E3AFC0',
+  lineStrong: '#46616F',
+  onWater: '#10283A',
+  mintTint: '#1F3A33',
+  mintInk: '#BEEBD8',
+  peachTint: '#3A2B27',
+  peachInk: '#F5CDBE',
+  toastBg: '#E5F0F4',
+  toastInk: '#14232C',
+  toastAccent: '#2B6E86',
+  scrim: 'rgba(0,0,0,0.45)',
 };
 
 /** Fixed character colors: identical in both themes. */

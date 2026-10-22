@@ -37,7 +37,8 @@ export function registerSpikeListeners() {
     record('notif-listener', `${r.notification.request.identifier}:${r.actionIdentifier}`);
   });
   const last = Notifications.getLastNotificationResponse();
-  if (last) record('notif-last', `${last.notification.request.identifier}:${last.actionIdentifier}`);
+  if (last)
+    record('notif-last', `${last.notification.request.identifier}:${last.actionIdentifier}`);
 
   // S2: Live Activity button events (only delivered while JS is observing).
   addUserInteractionListener((e) => record('la-event', `${e.source}:${e.target}`));

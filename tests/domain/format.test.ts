@@ -1,4 +1,10 @@
-import { formatClock, formatCountdown, formatLiters, formatProgress, formatStreak } from '@/domain/format';
+import {
+  formatClock,
+  formatCountdown,
+  formatLiters,
+  formatProgress,
+  formatStreak,
+} from '@/domain/format';
 import { at } from '../helpers/time';
 
 describe('formatLiters (FR-004)', () => {

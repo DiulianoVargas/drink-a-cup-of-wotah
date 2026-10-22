@@ -22,13 +22,23 @@ const SpikeActivity = (props: SpikeProps) => {
         <Button
           label="Bebi 💧"
           target="drink"
-          onPress={() => ({ ...props, count: props.count + 250, pending: props.pending + 1, seq: props.seq + 1 })}
+          onPress={() => ({
+            ...props,
+            count: props.count + 250,
+            pending: props.pending + 1,
+            seq: props.seq + 1,
+          })}
         />
       </VStack>
     ),
     compactLeading: <Text>💧</Text>,
     compactTrailing: (
-      <Text modifiers={[font({ size: 13, weight: 'heavy', design: 'rounded' }), foregroundStyle('#9FD8EA')]}>
+      <Text
+        modifiers={[
+          font({ size: 13, weight: 'heavy', design: 'rounded' }),
+          foregroundStyle('#9FD8EA'),
+        ]}
+      >
         {`${props.count}`}
       </Text>
     ),
@@ -37,7 +47,12 @@ const SpikeActivity = (props: SpikeProps) => {
       <Button
         label="Bebi 💧"
         target="drink"
-        onPress={() => ({ ...props, count: props.count + 250, pending: props.pending + 1, seq: props.seq + 1 })}
+        onPress={() => ({
+          ...props,
+          count: props.count + 250,
+          pending: props.pending + 1,
+          seq: props.seq + 1,
+        })}
       />
     ),
   };

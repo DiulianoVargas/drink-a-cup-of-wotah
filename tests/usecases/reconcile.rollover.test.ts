@@ -5,7 +5,14 @@ import { createTestDeps } from '../helpers/fakes';
 type Deps = Awaited<ReturnType<typeof createTestDeps>>;
 const seedSip = (deps: Deps, when: Date) =>
   deps.sips.add(
-    { id: `s${when.getTime()}`, amountMl: 250, occurredAt: when.getTime(), dayKey: '2026-10-22', source: 'button', undoneAt: null },
+    {
+      id: `s${when.getTime()}`,
+      amountMl: 250,
+      occurredAt: when.getTime(),
+      dayKey: '2026-10-22',
+      source: 'button',
+      undoneAt: null,
+    },
     2000,
   );
 

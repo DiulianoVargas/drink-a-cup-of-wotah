@@ -25,10 +25,15 @@ export default function DevTools() {
 
   return (
     <ScrollView contentContainerStyle={styles.root} style={{ backgroundColor: colors.bg }}>
-      <Button label="S1 · Notificação em 60 s (ação DRINK)" onPress={run('S1', scheduleSpikeNotification)} />
+      <Button
+        label="S1 · Notificação em 60 s (ação DRINK)"
+        onPress={run('S1', scheduleSpikeNotification)}
+      />
       <Button
         label="S2/S4 · Iniciar Live Activity de teste"
-        onPress={run('S2', () => spikeActivity.start({ count: 0, pending: 0, seq: 0, imagePath: null }).getId())}
+        onPress={run('S2', () =>
+          spikeActivity.start({ count: 0, pending: 0, seq: 0, imagePath: null }).getId(),
+        )}
       />
       <Button
         label="S2 · Instâncias ativas"
@@ -36,12 +41,16 @@ export default function DevTools() {
       />
       <Button
         label="S2 · Encerrar atividades"
-        onPress={run('S2 end', () => Promise.all(spikeActivity.getInstances().map((i) => i.end('immediate'))))}
+        onPress={run('S2 end', () =>
+          Promise.all(spikeActivity.getInstances().map((i) => i.end('immediate'))),
+        )}
       />
       <Button label="S3 · Caminho do banco" onPress={run('S3', dbInfo)} />
       <Button label="Atualizar log" onPress={run('log', () => undefined)} />
       <Button label="Limpar log" onPress={run('clear', clearSpikeLog)} />
-      <Text selectable style={[styles.mono, { color: colors.ink }]}>{info}</Text>
+      <Text selectable style={[styles.mono, { color: colors.ink }]}>
+        {info}
+      </Text>
       {log.map((line) => (
         <Text key={line} selectable style={[styles.mono, { color: colors.ink2 }]}>
           {line}
@@ -57,7 +66,8 @@ function Button({ label, onPress }: { label: string; onPress: () => void }) {
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={[styles.button, { backgroundColor: colors.plusButton }]}>
+      style={[styles.button, { backgroundColor: colors.plusButton }]}
+    >
       <Text style={styles.buttonText}>{label}</Text>
     </Pressable>
   );

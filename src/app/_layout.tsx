@@ -1,9 +1,5 @@
 import { Fredoka_500Medium, Fredoka_600SemiBold } from '@expo-google-fonts/fredoka';
-import {
-  Nunito_400Regular,
-  Nunito_700Bold,
-  Nunito_800ExtraBold,
-} from '@expo-google-fonts/nunito';
+import { Nunito_400Regular, Nunito_700Bold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -37,7 +33,9 @@ export default function RootLayout() {
     // Every return to the foreground re-reads the day (rollover, clock/time zone changes).
     const sub = AppState.addEventListener('change', (next) => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
-        getApp().reconcile().catch((e) => console.warn('[reconcile] failed', e));
+        getApp()
+          .reconcile()
+          .catch((e) => console.warn('[reconcile] failed', e));
       }
       appState.current = next;
     });

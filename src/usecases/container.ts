@@ -4,6 +4,7 @@ import { createProfileRepo } from '@/services/db/profileRepo';
 import { createSipRepo } from '@/services/db/sipRepo';
 import { storeSink, useWotahStore } from '@/state/store';
 import { createApp, type App } from './app';
+import { ensureDevProfile } from './devProfile';
 import type { Effect } from './syncSideEffects';
 
 const systemClock = { now: () => new Date() };
@@ -20,6 +21,7 @@ let app: App | null = null;
 export function getApp(): App {
   if (!app) {
     const db = getDb();
+    ensureDevProfile(createProfileRepo(db), __DEV__);
     app = createApp(
       {
         sips: createSipRepo(db),

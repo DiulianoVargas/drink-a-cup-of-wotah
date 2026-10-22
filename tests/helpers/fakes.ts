@@ -4,7 +4,12 @@ import { createEventLog } from '@/services/db/eventLog';
 import { createProfileRepo } from '@/services/db/profileRepo';
 import { createSipRepo } from '@/services/db/sipRepo';
 import type { AppDeps, StateSink, Published } from '@/usecases/app';
-import type { Clock, LiveActivityPort, PermissionStatus, ReminderScheduler } from '@/usecases/ports';
+import type {
+  Clock,
+  LiveActivityPort,
+  PermissionStatus,
+  ReminderScheduler,
+} from '@/usecases/ports';
 import { createTestDb } from './sqljsDb';
 
 export class FixedClock implements Clock {

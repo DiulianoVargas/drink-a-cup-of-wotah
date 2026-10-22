@@ -157,3 +157,27 @@ validation (spike) before work builds on them (Constitution › Development Work
 - [expo/expo#49828](https://github.com/expo/expo/issues/49828) · [expo-live-activity-recorder (community example)](https://github.com/seniormobiledev/expo-live-activity-recorder)
 - [expo-notifications (SDK 57)](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/) · [Forum: background responses](https://forums.expo.dev/t/background-and-killed-push-notification-response-handling/55368)
 - [Apple: Configuring app groups](https://developer.apple.com/documentation/xcode/configuring-app-groups)
+
+## Implementation findings (2026-10-22, from installed `expo-widgets` 57.0.27 source)
+
+Read in `node_modules/expo-widgets/ios/Widgets/AppIntent.swift` and `WidgetsModule.swift` during
+Phase 2. They contradict part of R5 and must be confirmed by spike S2 on the device:
+
+- **Live Activity buttons do not evaluate `onPress`.** Home-screen widget buttons use
+  `WidgetUserInteraction`, which runs the `onPress` JS in the widget runtime and stores the new props
+  in the App Group. Live Activity buttons use `LiveActivityUserInteraction` (a `LiveActivityIntent`),
+  whose `perform()` only posts an in-process `NotificationCenter` event. The activity does **not**
+  change by itself; the app must call `update()`.
+- **There is no props read-back.** `LiveActivity` exposes only `getId`, `update`, `end` and
+  `getPushToken`, so the "read `pendingSips` from `getInstances()`" reconciliation in R5 is not possible.
+- **Delivery depends on the app process.** `LiveActivityIntent.perform()` runs in the app process
+  (iOS launches it in the background if needed). The event reaches JS only if a listener is already
+  observing. When the app is suspended, this should work. When the app was terminated, the event is
+  likely posted before the JS bundle registers the listener, so the tap would be lost.
+- **Consequence**: with Expo only, the Live Activity "Bebi 💧" works while the app process is alive
+  and is likely lost when it was terminated (the activity simply does not change, so nothing wrong is
+  displayed). Making it reliable needs native code that persists the interaction (Phase 9 fallback,
+  or a small local module that queues interactions in the App Group for JS to drain on start).
+- **Spike S2 (updated)**: measure (a) app suspended → tap logs exactly once; (b) app terminated →
+  is the tap delivered or lost? T073's parity test and T078's `onPress` props become moot for
+  Live Activities; they still apply to a v2 home-screen widget.

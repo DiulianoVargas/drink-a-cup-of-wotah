@@ -260,16 +260,17 @@ expanded "Bebi 💧" logs a sip and everything agrees (quickstart scenarios 6–
 
 ---
 
-## Phase 9 (CONDITIONAL): Native fallback — only if spike S1 or S2 shows sips can be lost
+## Phase 9: Native fallback (Swift) — adopted by the owner on 2026-10-22
 
-**Purpose**: Constitution III escape hatch, recorded in plan.md › Complexity Tracking. Skip
-entirely if T010/T072/T083 pass.
+**Purpose**: Constitution III escape hatch, recorded in plan.md › Complexity Tracking. The owner chose
+Swift for the "Bebi 💧" Live Activity tap with the app terminated (code reading showed the tap is an
+in-process event that JS misses when the app was killed). Business rules stay in TypeScript.
 
-- [ ] T099 [US3] Create a local Expo Module `modules/wotah-native` (`npx create-expo-module@latest --local`) with an iOS target only
-- [ ] T100 [US3] Port `planReminders`, `pickMessage` and `dayKeyFor` 1:1 to Swift in `modules/wotah-native/ios/Domain.swift`, with XCTest cases copied from `tests/domain/reminders.test.ts`, `messages.test.ts` and `day.test.ts` (run on EAS)
-- [ ] T101 [US3] Implement a `UNUserNotificationCenterDelegate` for action `DRINK` in `modules/wotah-native/ios/NotificationDelegate.swift` that writes the sip into the App Group `wotah.db` (same schema, `processed_event` key `notif:<id>:DRINK`) and reschedules the chain natively
-- [ ] T102 [US4] Implement a `LiveActivityIntent` (iOS 17) in `modules/wotah-native/ios/DrinkIntent.swift` that writes the sip to `wotah.db`, reschedules reminders and updates the activity; switch the `Bebi 💧` button in `src/widgets/WotahDay.tsx` to invoke it
-- [ ] T103 [US4] Make `src/usecases/reconcile.ts` treat natively-written sips as already imported (no double count); re-run quickstart scenarios 3–7 and update research.md R4/R5 with the final decision
+- [X] T099 [US4] Create the local Expo Module `modules/wotah-native` (iOS only; `expo-module.config.json`, `WotahNative.podspec`), autolinked from `modules/`
+- [X] T100 [US4] `WotahAppDelegateSubscriber.swift`: in `subscriberDidRegister` (before the intent runs and before JS loads) observe expo-widgets' `onExpoWidgetsUserInteraction` notification and persist each tap via `PendingInteractions.swift` in the App Group `UserDefaults` (`ExpoWidgetsAppGroupIdentifier`, max 200 entries)
+- [X] T101 [US4] `WotahNativeModule.swift` exposes `drainPendingInteractions()`; `modules/wotah-native/index.ts` wraps it with `requireOptionalNativeModule` (no-op in Jest)
+- [X] T102 [US4] `importPendingInteractions` (tests in `tests/usecases/liveActivityEffect.test.ts`) imports queued taps with the same `la:<source>:<timestamp>` keys as the live listener, so a tap delivered both ways counts once; `bootApp`/`onForeground` drain the queue
+- [ ] T103 [US3] Only if spike S1 shows notification-action sips are lost with the app terminated: add the equivalent native capture for the `DRINK` action (without replacing expo-notifications' delegate) and drain it the same way
 
 ---
 

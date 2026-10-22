@@ -18,3 +18,15 @@ export async function handleLiveActivityInteraction(
     eventKey: `la:${event.source}:${event.timestamp}`,
   });
 }
+
+/**
+ * Taps the Swift module (modules/wotah-native) recorded while JS was not listening, e.g. when iOS
+ * launched the terminated app for the Live Activity intent. Same event keys as the live path, so a
+ * tap delivered both ways counts once.
+ */
+export async function importPendingInteractions(
+  app: Pick<App, 'registerSip'>,
+  events: InteractionEvent[],
+): Promise<void> {
+  for (const event of events) await handleLiveActivityInteraction(app, event);
+}

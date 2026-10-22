@@ -185,3 +185,9 @@ Phase 2. They contradict part of R5 and must be confirmed by spike S2 on the dev
   bedtime and is excluded" broke FR-019/AS-3.7 (with 1 glass left, the only reminder always lands at
   bedtime). The chain now allows `t ≤ bedtime`; the spec only forbids reminders *after* bedtime.
   AS-3.1 therefore yields 8 reminders (09:45 … 22:00), matching "14 h ÷ 8 copos".
+- **Native fallback adopted (2026-10-22, owner decision)**: `modules/wotah-native` (Swift) observes
+  expo-widgets' interaction notification from `subscriberDidRegister` (earliest point in the app
+  process) and queues each tap in the App Group; JS drains it on boot/foreground with the same
+  idempotency keys as the live listener. When iOS launches the terminated app for the
+  LiveActivityIntent, the JS bundle boots in the background and processes the queue, rescheduling
+  reminders and updating the activity. Spike S2(b) now validates this path.

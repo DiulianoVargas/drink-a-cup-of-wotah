@@ -2,6 +2,7 @@ import { getDb } from '@/services/db/client';
 import { createEventLog } from '@/services/db/eventLog';
 import { createProfileRepo } from '@/services/db/profileRepo';
 import { createSipRepo } from '@/services/db/sipRepo';
+import { drainPendingInteractions } from '../../modules/wotah-native';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import { addUserInteractionListener } from 'expo-widgets';
@@ -19,7 +20,10 @@ import { createApp, type App } from './app';
 import { wotahDay } from '@/widgets/WotahDay';
 import { createLiveActivityEffect } from './effects/liveActivity';
 import { createReminderEffect } from './effects/reminders';
-import { handleLiveActivityInteraction } from './liveActivityInteraction';
+import {
+  handleLiveActivityInteraction,
+  importPendingInteractions,
+} from './liveActivityInteraction';
 import type { Effect } from './syncSideEffects';
 
 const systemClock = { now: () => new Date() };
@@ -90,11 +94,17 @@ export function listenToSystemEvents(): void {
   }
 }
 
+/** Live Activity taps the Swift module queued while JS was not running (Phase 9). */
+async function processPendingInteractions() {
+  await importPendingInteractions(getApp(), drainPendingInteractions());
+}
+
 /** Boot: open the DB, publish the current state (or mark ready when there is no profile yet). */
 export async function bootApp(): Promise<void> {
   await registerNotificationCategories().catch(() => {});
   await refreshPermission().catch(() => {});
   await processLastNotificationResponse().catch(() => {});
+  await processPendingInteractions().catch(() => {});
   const today = await getApp().reconcile();
   if (!today) useWotahStore.setState({ ready: true });
 }
@@ -103,5 +113,6 @@ export async function bootApp(): Promise<void> {
 export async function onForeground(): Promise<void> {
   await refreshPermission().catch(() => {});
   await processLastNotificationResponse().catch(() => {});
+  await processPendingInteractions().catch(() => {});
   await getApp().reconcile();
 }

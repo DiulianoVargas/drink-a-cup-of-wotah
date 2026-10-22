@@ -1,7 +1,10 @@
 import { createApp } from '@/usecases/app';
 import { createLiveActivityEffect, LA_DISMISS_AFTER_MS } from '@/usecases/effects/liveActivity';
 import { createReminderEffect } from '@/usecases/effects/reminders';
-import { handleLiveActivityInteraction } from '@/usecases/liveActivityInteraction';
+import {
+  handleLiveActivityInteraction,
+  importPendingInteractions,
+} from '@/usecases/liveActivityInteraction';
 import { at } from '../helpers/time';
 import { createTestDeps } from '../helpers/fakes';
 
@@ -108,5 +111,24 @@ describe('Live Activity "Bebi 💧" (FR-023)', () => {
       type: 'ExpoWidgetsUserInteraction',
     });
     expect(deps.sink.last.today.consumedMl).toBe(0);
+  });
+});
+
+describe('taps recorded natively while JS was not running (Swift queue, Phase 9)', () => {
+  it('imports queued taps once, even if the same tap was also delivered live', async () => {
+    const { app, deps } = await setup();
+    await app.reconcile();
+    const tap = (timestamp: number) => ({ source: 'act-1', target: 'wotah-drink', timestamp });
+    await handleLiveActivityInteraction(app, tap(1)); // delivered live
+    await importPendingInteractions(app, [tap(1), tap(2), tap(3), { ...tap(4), target: 'drink' }]);
+    expect(deps.sink.last.today.consumedMl).toBe(750);
+  });
+
+  it('an empty queue changes nothing', async () => {
+    const { app, deps } = await setup();
+    await app.reconcile();
+    const before = deps.sink.published.length;
+    await importPendingInteractions(app, []);
+    expect(deps.sink.published.length).toBe(before);
   });
 });

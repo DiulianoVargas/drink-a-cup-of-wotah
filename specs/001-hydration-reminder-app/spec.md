@@ -18,7 +18,7 @@
 - Q: Is the home-screen widget (small/medium/large, designed in `design/Wotah Widgets.html`) part of v1? → A: No. It is deferred to v2 and listed as out of scope.
 - Q: Does SC-003 (no reminders after the goal) hold when the goal is reached by sips logged while the app is not running? → A: Not until the app next runs. Already-scheduled reminders may still arrive in that window; this is accepted for v1 (no native code), consistent with the answer below.
 - Q: On devices without the interactive live activity button (older OS), what does tapping the activity do? → A: It opens the app and logs a sip with the "Desfazer" toast, like tapping a reminder's body, so logging stays one tap from every entry point.
-- Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The Live Activity itself updates immediately. The app's stored total, history and reminder schedule catch up the next time the app runs (pending sips are imported exactly once). The 2-second consistency target (SC-005) applies while the app is running. A native-code path is only adopted if on-device validation shows sips can be lost.
+- Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The tap is captured natively and processed when iOS wakes the app in the background (usually within seconds), exactly once; the activity, history and reminders then update. If processing is delayed, it completes the next time the app runs. (Updated 2026-10-22: a small native module was adopted because the Live Activity button cannot run JavaScript.)
 
 ## User Scenarios & Testing *(mandatory)*
 

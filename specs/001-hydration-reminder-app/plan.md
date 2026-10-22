@@ -157,4 +157,4 @@ See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
 
 | Potential violation | Why it may be needed | Simpler alternative rejected because |
 |---|---|---|
-| Swift Expo Module `modules/wotah-native` (conditional, Constitution III) | FR-016/FR-023 require logging a sip without opening the app, exactly once. The `expo-widgets` runtime cannot reach storage or notifications, and iOS background actions may not run JS | "Reconcile on next run" is the accepted default. It is only insufficient if spikes S1/S2 show the pending sips cannot be recovered at all (i.e. they would be lost) |
+| Swift Expo Module `modules/wotah-native` (adopted 2026-10-22, Constitution III) | Live Activity buttons only post an in-process event (verified in expo-widgets source); with the app terminated JS is not listening yet, so taps were lost (FR-023) | Pure Expo had no way to persist the event before JS starts; the module only queues taps in the App Group — all rules stay in the TypeScript domain |

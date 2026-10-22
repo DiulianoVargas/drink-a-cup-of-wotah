@@ -9,6 +9,10 @@ type WotahState = {
   nextReminderAt: number | null;
   /** Increments every time the "Desfazer" toast should (re)appear. */
   undoToastKey: number;
+  /** Increments every time the day reaches its goal. */
+  celebrateKey: number;
+  /** OS notification permission (refreshed on boot and foreground). */
+  permission: 'granted' | 'denied' | 'undetermined';
 };
 
 /** Read-only view of the database for the UI; rebuilt by every sync (research R7). */
@@ -18,6 +22,8 @@ export const useWotahStore = create<WotahState>(() => ({
   today: null,
   nextReminderAt: null,
   undoToastKey: 0,
+  celebrateKey: 0,
+  permission: 'undetermined',
 }));
 
 export const storeSink: StateSink = {
@@ -31,5 +37,8 @@ export const storeSink: StateSink = {
   },
   requestUndoToast() {
     useWotahStore.setState((s) => ({ undoToastKey: s.undoToastKey + 1 }));
+  },
+  requestCelebration() {
+    useWotahStore.setState((s) => ({ celebrateKey: s.celebrateKey + 1 }));
   },
 };

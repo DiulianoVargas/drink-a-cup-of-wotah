@@ -1,5 +1,6 @@
 import { GLASS_ML } from '@/domain/constants';
 import { dayKeyFor } from '@/domain/day';
+import { assertValidProfile } from '@/domain/profile';
 import type { Profile, SipSource, TodayState } from '@/domain/types';
 import { getTodayState } from './getTodayState';
 import type {
@@ -22,7 +23,16 @@ export type Published = {
 export interface StateSink {
   publish(p: Published): void;
   requestUndoToast(): void;
+  /** The day just reached its goal (confetti + success haptic). */
+  requestCelebration(): void;
 }
+
+export type OnboardingDraft = Pick<
+  Profile,
+  'weightKg' | 'dailyGoalMl' | 'wakeMinutes' | 'sleepMinutes'
+>;
+
+const goalMet = (t: TodayState) => t.consumedMl >= t.goalMl;
 
 export type AppDeps = {
   sips: SipRepository;
@@ -45,7 +55,18 @@ export function createApp(deps: AppDeps, effects: Effect[]) {
   const sync = async (today: TodayState) => {
     const previous = last;
     last = today;
-    return syncSideEffects(deps, { today, previous }, effects);
+    const result = await syncSideEffects(deps, { today, previous }, effects);
+    // FR-018: celebrate the moment the day crosses its goal (by a sip or by lowering the goal).
+    if (previous && previous.dayKey === today.dayKey && !goalMet(previous) && goalMet(today)) {
+      deps.sink.requestCelebration();
+    }
+    return result;
+  };
+
+  const resync = async () => {
+    const today = getTodayState(deps);
+    if (today) await sync(today);
+    return today;
   };
 
   return {
@@ -97,12 +118,32 @@ export function createApp(deps: AppDeps, effects: Effect[]) {
       return today;
     },
 
+    /** FR-011: settings apply immediately and keep what was drunk today. */
+    async updateProfile(patch: Partial<Profile>): Promise<TodayState | null> {
+      const current = deps.profiles.get();
+      if (!current) return null;
+      const next = { ...current, ...patch };
+      assertValidProfile(next);
+      deps.profiles.save(next);
+      if (patch.dailyGoalMl !== undefined && patch.dailyGoalMl !== current.dailyGoalMl) {
+        deps.sips.setDayGoal(dayKeyFor(deps.clock.now(), next.wakeMinutes), next.dailyGoalMl);
+      }
+      if (patch.remindersEnabled === false) await deps.scheduler?.cancelAll();
+      return resync();
+    },
+
+    /** FR-008: the OS permission answer never blocks onboarding (AS-2.4). */
+    async completeOnboarding(draft: OnboardingDraft): Promise<TodayState | null> {
+      const profile: Profile = { ...draft, remindersEnabled: true, onboardingCompleted: true };
+      assertValidProfile(profile);
+      deps.profiles.save(profile);
+      deps.sips.setDayGoal(dayKeyFor(deps.clock.now(), profile.wakeMinutes), profile.dailyGoalMl);
+      return resync();
+    },
+
     /** Cold start / foreground: re-reads the day (rollover, time zone or clock change) and re-syncs. */
     async reconcile(): Promise<TodayState | null> {
-      const today = getTodayState(deps);
-      if (!today) return null;
-      await sync(today);
-      return today;
+      return resync();
     },
   };
 }

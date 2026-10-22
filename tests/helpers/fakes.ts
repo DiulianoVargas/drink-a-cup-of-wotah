@@ -72,11 +72,15 @@ export class FakeLiveActivity implements LiveActivityPort {
 export class FakeSink implements StateSink {
   published: Published[] = [];
   toasts = 0;
+  celebrations = 0;
   publish(p: Published) {
     this.published.push(p);
   }
   requestUndoToast() {
     this.toasts++;
+  }
+  requestCelebration() {
+    this.celebrations++;
   }
   get last() {
     return this.published[this.published.length - 1];

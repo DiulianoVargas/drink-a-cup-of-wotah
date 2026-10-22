@@ -137,24 +137,24 @@ Settings reflect the values (quickstart scenario 1 and 9).
 
 ### Tests for User Story 2 (write first, must fail) ⚠️
 
-- [ ] T044 [P] [US2] Table tests in `tests/domain/goal.test.ts`: `suggestGoalMl` 70 → 2500 (AS-2.1), 30 → 1000, 60 → 2000, 250 → 6000 (clamped), and clamped to [500, 6000]; `stepGoalMl` ±250 with clamps at 500 and 6000 (FR-010)
-- [ ] T045 [P] [US2] Table tests in `tests/domain/reminders.estimate.test.ts` for `estimateIntervalMinutes(profile)` used by the schedule screen hint: 8:00–22:00 with 2000 ml → 105 min ("~1h45"); 30-minute floor
-- [ ] T046 [P] [US2] Tests in `tests/usecases/updateProfile.test.ts`: changes apply immediately and preserve today's total (AS-2.5, FR-011); changing the goal updates today's `day.goal_ml` (FR-028); turning reminders off calls the scheduler `cancelAll`; lowering the goal to ≤ today's total marks the day as met, schedules only the next-window chain and requests the celebration (edge case "Goal changed mid-day"); calls `syncSideEffects`
-- [ ] T047 [P] [US2] Tests in `tests/usecases/completeOnboarding.test.ts`: saves the profile with `onboardingCompleted = true` whether permission is granted or declined (FR-008)
-- [ ] T048 [P] [US2] Component test `tests/ui/onboarding.test.tsx`: steps appear in order weight → goal → schedule → permission; pressing "Continuar" on each step with defaults (70 kg, 2,5 L, 08:00/22:00) reaches Home (SC-001)
+- [X] T044 [P] [US2] Table tests in `tests/domain/goal.test.ts`: `suggestGoalMl` 70 → 2500 (AS-2.1), 30 → 1000, 60 → 2000, 250 → 6000 (clamped), and clamped to [500, 6000]; `stepGoalMl` ±250 with clamps at 500 and 6000 (FR-010)
+- [X] T045 [P] [US2] Table tests in `tests/domain/reminders.estimate.test.ts` for `estimateIntervalMinutes(profile)` used by the schedule screen hint: 8:00–22:00 with 2000 ml → 105 min ("~1h45"); 30-minute floor
+- [X] T046 [P] [US2] Tests in `tests/usecases/updateProfile.test.ts`: changes apply immediately and preserve today's total (AS-2.5, FR-011); changing the goal updates today's `day.goal_ml` (FR-028); turning reminders off calls the scheduler `cancelAll`; lowering the goal to ≤ today's total marks the day as met, schedules only the next-window chain and requests the celebration (edge case "Goal changed mid-day"); calls `syncSideEffects`
+- [X] T047 [P] [US2] Tests in `tests/usecases/completeOnboarding.test.ts`: saves the profile with `onboardingCompleted = true` whether permission is granted or declined (FR-008)
+- [X] T048 [P] [US2] Component test `tests/ui/onboarding.test.tsx`: steps appear in order weight → goal → schedule → permission; pressing "Continuar" on each step with defaults (70 kg, 2,5 L, 08:00/22:00) reaches Home (SC-001)
 
 ### Implementation for User Story 2
 
-- [ ] T049 [P] [US2] Implement `src/domain/goal.ts` to pass T044 and `estimateIntervalMinutes` in `src/domain/reminders.ts` to pass T045
-- [ ] T050 [US2] Implement `src/usecases/updateProfile.ts` and `src/usecases/completeOnboarding.ts` to pass T046/T047
-- [ ] T051 [P] [US2] Create `src/ui/components/WheelPicker.tsx` (weight 30–250, default 70; times in 30-minute steps; VoiceOver adjustable) and `src/ui/components/Stepper.tsx` (− / + by 250 ml, shows "10 copos de 250 ml")
-- [ ] T052 [P] [US2] Create `src/ui/components/Pill.tsx` (primary/secondary tones) and `src/ui/components/SuggestGoalCard.tsx` (mint card "Com 72 kg, a sugestão é 2,5 L por dia. Quer atualizar sua meta?" with "Atualizar pra …" / "Manter …"; FR-012)
-- [ ] T053 [US2] Create onboarding screens in `src/app/(onboarding)/weight.tsx` ("Quanto você pesa?"), `goal.tsx` ("Sua meta diária", suggestion text "Pra 70 kg, a gente sugere 2,5 L por dia. Pode ajustar do seu jeito."), `schedule.tsx` ("Que horas você acorda e dorme?" + hint "14 horas acordado · um lembrete a cada ~1h45"), with a draft profile held in `src/app/(onboarding)/_layout.tsx`; copy texts verbatim from `design/Wotah Telas.html`
-- [ ] T054 [US2] Create `src/services/notifications/permissions.ts` (`getPermission`, `requestPermission` via `expo-notifications`) and `src/app/(onboarding)/permission.tsx` ("Posso te dar um toquinho?", sample notification preview, "Permitir lembretes" / "Agora não"); both choices call `completeOnboarding` and replace to Home (AS-2.3)
-- [ ] T055 [US2] Add the onboarding gate in `src/app/_layout.tsx`: redirect to `(onboarding)/weight` when no profile or `onboardingCompleted = false`, otherwise to `(main)`
-- [ ] T056 [US2] Create `src/app/(main)/settings.tsx` per `design/Wotah Telas.html` › Ajustes: weight (shows `SuggestGoalCard` when the suggestion differs; never changes the goal by itself), goal stepper, wake/sleep pickers, reminders toggle with the explanatory text; all via `updateProfile`; add a settings entry point on Home
-- [ ] T057 [US2] Create `src/ui/components/RemindersOffBanner.tsx` and show it on Home when permission ≠ granted or reminders are off, with a button calling `Linking.openSettings()` (AS-2.4)
-- [ ] T058 [US2] Remove the dev default profile call from `src/usecases/container.ts` and delete `src/usecases/devProfile.ts` and `tests/usecases/devProfile.test.ts` (added in T043)
+- [X] T049 [P] [US2] Implement `src/domain/goal.ts` to pass T044 and `estimateIntervalMinutes` in `src/domain/reminders.ts` to pass T045
+- [X] T050 [US2] Implement `src/usecases/updateProfile.ts` and `src/usecases/completeOnboarding.ts` to pass T046/T047
+- [X] T051 [P] [US2] Create `src/ui/components/WheelPicker.tsx` (weight 30–250, default 70; times in 30-minute steps; VoiceOver adjustable) and `src/ui/components/Stepper.tsx` (− / + by 250 ml, shows "10 copos de 250 ml")
+- [X] T052 [P] [US2] Create `src/ui/components/Pill.tsx` (primary/secondary tones) and `src/ui/components/SuggestGoalCard.tsx` (mint card "Com 72 kg, a sugestão é 2,5 L por dia. Quer atualizar sua meta?" with "Atualizar pra …" / "Manter …"; FR-012)
+- [X] T053 [US2] Create onboarding screens in `src/app/(onboarding)/weight.tsx` ("Quanto você pesa?"), `goal.tsx` ("Sua meta diária", suggestion text "Pra 70 kg, a gente sugere 2,5 L por dia. Pode ajustar do seu jeito."), `schedule.tsx` ("Que horas você acorda e dorme?" + hint "14 horas acordado · um lembrete a cada ~1h45"), with a draft profile held in `src/app/(onboarding)/_layout.tsx`; copy texts verbatim from `design/Wotah Telas.html`
+- [X] T054 [US2] Create `src/services/notifications/permissions.ts` (`getPermission`, `requestPermission` via `expo-notifications`) and `src/app/(onboarding)/permission.tsx` ("Posso te dar um toquinho?", sample notification preview, "Permitir lembretes" / "Agora não"); both choices call `completeOnboarding` and replace to Home (AS-2.3)
+- [X] T055 [US2] Add the onboarding gate in `src/app/_layout.tsx`: redirect to `(onboarding)/weight` when no profile or `onboardingCompleted = false`, otherwise to `(main)`
+- [X] T056 [US2] Create `src/app/(main)/settings.tsx` per `design/Wotah Telas.html` › Ajustes: weight (shows `SuggestGoalCard` when the suggestion differs; never changes the goal by itself), goal stepper, wake/sleep pickers, reminders toggle with the explanatory text; all via `updateProfile`; add a settings entry point on Home
+- [X] T057 [US2] Create `src/ui/components/RemindersOffBanner.tsx` and show it on Home when permission ≠ granted or reminders are off, with a button calling `Linking.openSettings()` (AS-2.4)
+- [X] T058 [US2] Remove the dev default profile call from `src/usecases/container.ts` and delete `src/usecases/devProfile.ts` and `tests/usecases/devProfile.test.ts` (added in T043)
 
 **Checkpoint**: A fresh install goes through onboarding and lands on a working Home (US1 + US2).
 

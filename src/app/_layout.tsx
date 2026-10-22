@@ -6,11 +6,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
+import { registerSpikeListeners } from '@/dev/spikes';
 import { useWotahStore } from '@/state/store';
 import { useTheme } from '@/ui/theme/useTheme';
-import { bootApp, getApp } from '@/usecases/container';
-
-import { registerSpikeListeners } from '@/dev/spikes';
+import { bootApp, onForeground } from '@/usecases/container';
 
 SplashScreen.preventAutoHideAsync();
 // Module scope: listeners must exist before iOS delivers a background response.
@@ -19,6 +18,7 @@ registerSpikeListeners();
 export default function RootLayout() {
   const { colors, dark } = useTheme();
   const ready = useWotahStore((s) => s.ready);
+  const onboarded = useWotahStore((s) => s.profile?.onboardingCompleted ?? false);
   const [fontsLoaded] = useFonts({
     Fredoka_500Medium,
     Fredoka_600SemiBold,
@@ -33,9 +33,7 @@ export default function RootLayout() {
     // Every return to the foreground re-reads the day (rollover, clock/time zone changes).
     const sub = AppState.addEventListener('change', (next) => {
       if (appState.current.match(/inactive|background/) && next === 'active') {
-        getApp()
-          .reconcile()
-          .catch((e) => console.warn('[reconcile] failed', e));
+        onForeground().catch((e) => console.warn('[reconcile] failed', e));
       }
       appState.current = next;
     });
@@ -52,7 +50,13 @@ export default function RootLayout() {
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
-        <Stack.Screen name="(main)" />
+        {/* FR-008: onboarding until the profile is complete, then the app. */}
+        <Stack.Protected guard={onboarded}>
+          <Stack.Screen name="(main)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!onboarded}>
+          <Stack.Screen name="(onboarding)" />
+        </Stack.Protected>
         <Stack.Screen name="dev/tools" options={{ headerShown: true, title: 'Dev tools' }} />
       </Stack>
     </>

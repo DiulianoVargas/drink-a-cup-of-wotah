@@ -181,3 +181,7 @@ Phase 2. They contradict part of R5 and must be confirmed by spike S2 on the dev
 - **Spike S2 (updated)**: measure (a) app suspended → tap logs exactly once; (b) app terminated →
   is the tap delivered or lost? T073's parity test and T078's `onPress` props become moot for
   Live Activities; they still apply to a v2 home-screen widget.
+- **Reminder at bedtime (2026-10-22, during T059)**: the analysis-era rule "the 8th reminder falls at
+  bedtime and is excluded" broke FR-019/AS-3.7 (with 1 glass left, the only reminder always lands at
+  bedtime). The chain now allows `t ≤ bedtime`; the spec only forbids reminders *after* bedtime.
+  AS-3.1 therefore yields 8 reminders (09:45 … 22:00), matching "14 h ÷ 8 copos".

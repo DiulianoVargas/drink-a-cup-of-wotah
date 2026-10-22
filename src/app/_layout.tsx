@@ -9,10 +9,11 @@ import { AppState } from 'react-native';
 import { registerSpikeListeners } from '@/dev/spikes';
 import { useWotahStore } from '@/state/store';
 import { useTheme } from '@/ui/theme/useTheme';
-import { bootApp, onForeground } from '@/usecases/container';
+import { bootApp, listenToNotificationResponses, onForeground } from '@/usecases/container';
 
 SplashScreen.preventAutoHideAsync();
-// Module scope: listeners must exist before iOS delivers a background response.
+// Module scope: listeners must exist before iOS delivers a background response (research R4).
+listenToNotificationResponses();
 registerSpikeListeners();
 
 export default function RootLayout() {

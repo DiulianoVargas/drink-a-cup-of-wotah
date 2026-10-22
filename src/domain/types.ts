@@ -37,8 +37,11 @@ export type Reminder = {
   /** Epoch ms. */
   fireAt: number;
   dayKey: DayKey;
+  /** Position in the planned list (stable notification id suffix). */
+  index: number;
   remainingGlasses: number;
-  messageIndex: number;
+  title: string;
+  body: string;
 };
 
 export type MascotExpression = 'thirsty' | 'excited' | 'radiant' | 'celebrating';

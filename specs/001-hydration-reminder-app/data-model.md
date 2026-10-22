@@ -154,9 +154,13 @@ if !remindersEnabled or remainingGlasses = 0  → today: []          (FR-018, SC
 anchor   = max(now, window.start)                                   (late start / outside window)
 interval = max( (window.end − anchor) / remainingGlasses , 30 min ) (FR-014)
 first    = (lastSipAt ≥ window.start ? lastSipAt : anchor) + interval (FR-015)
-chain: first, first+interval, …  while t < window.end and k ≤ remainingGlasses   (FR-013, SC-004)
+chain: first, first+interval, …  while t ≤ window.end and k ≤ remainingGlasses   (FR-013, SC-004, FR-019)
 next window: same formula with consumed = 0, anchor = nextWindow.start
 ```
+
+A reminder exactly at bedtime is allowed (the spec forbids only reminders *after* bedtime); otherwise
+the last glass would never be reminded (with 1 glass left the single reminder always lands at bedtime),
+breaking FR-019/AS-3.7.
 
 Spec cases that become table tests: AS-3.1 (2 L, 8:00–22:00 → ~1h45), AS-3.4 (a sip at 10:00
 reschedules), AS-3.5/3.7 (goal met/undo), plus the edge cases for a short window (30-minute floor),

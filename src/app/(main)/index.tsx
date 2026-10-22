@@ -12,6 +12,7 @@ import { ConfettiBurst } from '@/ui/components/ConfettiBurst';
 import { DropIcon } from '@/ui/components/DropIcon';
 import { FlyingDrop } from '@/ui/components/FlyingDrop';
 import { Mascot } from '@/ui/components/Mascot';
+import { NextReminderHint } from '@/ui/components/NextReminderHint';
 import { PlusButton } from '@/ui/components/PlusButton';
 import { ProgressCounter } from '@/ui/components/ProgressCounter';
 import { RemindersOffBanner } from '@/ui/components/RemindersOffBanner';
@@ -29,6 +30,7 @@ export default function Home() {
   const undoToastKey = useWotahStore((s) => s.undoToastKey);
   const celebrateKey = useWotahStore((s) => s.celebrateKey);
   const permission = useWotahStore((s) => s.permission);
+  const nextReminderAt = useWotahStore((s) => s.nextReminderAt);
 
   const [mascotBox, setMascotBox] = useState({ y: 0, height: 0 });
   const [plusY, setPlusY] = useState(0);
@@ -127,6 +129,13 @@ export default function Home() {
       <ProgressCounter consumedMl={consumedMl} goalMl={goalMl} />
 
       <View style={styles.reminderSlot}>
+        {!remindersOff && (
+          <NextReminderHint
+            nextReminderAt={nextReminderAt}
+            goalMet={consumedMl >= goalMl}
+            now={new Date()}
+          />
+        )}
         {remindersOff && (
           <RemindersOffBanner
             reason={remindersOff}

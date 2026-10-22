@@ -18,13 +18,19 @@ const metrics = {
   insets: { top: 59, left: 0, right: 0, bottom: 34 },
 };
 
-const show = async (consumedMl: number, goalMl = 2000) => {
+const show = async (
+  consumedMl: number,
+  goalMl = 2000,
+  extra: Partial<ReturnType<typeof useWotahStore.getState>> = {},
+) => {
   useWotahStore.setState({
     ready: true,
     profile: PROFILE,
     today: { dayKey: '2026-10-22', goalMl, consumedMl, lastSipAt: null },
     nextReminderAt: null,
     undoToastKey: 0,
+    permission: 'granted',
+    ...extra,
   });
   await render(
     <SafeAreaProvider initialMetrics={metrics}>
@@ -66,5 +72,28 @@ describe('Home (US1)', () => {
     });
     await fireEvent.press(await screen.findByText('Desfazer'));
     expect(mockUndoLastSip).toHaveBeenCalled();
+  });
+
+  it('shows the next reminder time (US3)', async () => {
+    const next = new Date();
+    next.setHours(23, 30, 0, 0);
+    await show(500, 2000, { nextReminderAt: next.getTime() });
+    expect(screen.getByText('Próximo lembrete às 23h30')).toBeTruthy();
+  });
+
+  it('goal met: reminders end for today', async () => {
+    await show(2000);
+    expect(screen.getByText('Lembretes de hoje encerrados. Até amanhã!')).toBeTruthy();
+  });
+
+  it('notifications denied: discreet notice, logging still works (AS-2.4)', async () => {
+    await show(500, 2000, { permission: 'denied' });
+    expect(
+      screen.getByText(
+        'Lembretes desligados. Pra ativar: Ajustes do iPhone › Notificações › Wotah.',
+      ),
+    ).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Registrar um copo de 250 ml'));
+    expect(mockRegisterSip).toHaveBeenCalledWith('button');
   });
 });

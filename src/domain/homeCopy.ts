@@ -1,6 +1,7 @@
 // Home headline and subtitle per state (design/Wotah Telas.html › Home). PT-BR, never guilt-tripping.
 import { GLASS_ML } from './constants';
-import { formatLiters } from './format';
+import { toDayKey } from './day';
+import { formatClock, formatLiters } from './format';
 import { expressionFor } from './progress';
 import type { MascotExpression } from './types';
 
@@ -68,4 +69,17 @@ const EXPRESSION_PT: Record<MascotExpression, string> = {
 export function mascotLabel(consumedMl: number, goalMl: number): string {
   const expression = EXPRESSION_PT[expressionFor(consumedMl, goalMl)];
   return `Garrafa com ${formatLiters(consumedMl)} de ${formatLiters(goalMl)} litros, ${expression}`;
+}
+
+/** Home hint under the counter (design: "Próximo lembrete às 14h30"). */
+export function nextReminderText(
+  nextAt: number | null,
+  now: Date,
+  goalMet: boolean,
+): string | null {
+  if (goalMet) return 'Lembretes de hoje encerrados. Até amanhã!';
+  if (nextAt === null) return null;
+  const when = new Date(nextAt);
+  const sameDay = toDayKey(when) === toDayKey(now);
+  return `Próximo lembrete ${sameDay ? '' : 'amanhã '}às ${formatClock(when)}`;
 }

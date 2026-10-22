@@ -14,7 +14,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:privacy
       - run: npm run typecheck
       - run: npm run lint
-      - run: npm test -- --ci
+      - run: npm test
       - run: npx expo-doctor

@@ -53,7 +53,8 @@
     "lint": "expo lint",
     "test": "jest && jest -c jest.lisbon.config.js",
     "format": "prettier --write .",
-    "doctor": "npx expo-doctor"
+    "doctor": "npx expo-doctor",
+    "check:privacy": "node scripts/check-no-telemetry.mjs"
   },
   "private": true
 }

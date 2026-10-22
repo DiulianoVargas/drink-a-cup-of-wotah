@@ -249,13 +249,13 @@ expanded "Bebi 💧" logs a sip and everything agrees (quickstart scenarios 6–
 
 **Purpose**: Accessibility, visuals, privacy and release readiness
 
-- [ ] T091 [P] Add `tests/ui/contrast.test.ts` computing WCAG contrast for `ink`/`ink2` on `bg`/`surface` and the button text on `plusButton`, in both themes, asserting ≥ 4.5:1 (or ≥ 3:1 for large text); adjust tokens only if a pair fails and note it in plan.md (Constitution V/VI)
+- [X] T091 [P] Add `tests/ui/contrast.test.ts` computing WCAG contrast for `ink`/`ink2` on `bg`/`surface` and the button text on `plusButton`, in both themes, asserting ≥ 4.5:1 (or ≥ 3:1 for large text); adjust tokens only if a pair fails and note it in plan.md (Constitution V/VI)
 - [ ] T092 Accessibility pass on every screen and component: PT-BR `accessibilityLabel`/`accessibilityHint` (e.g. "+" → "Registrar um copo de 250 ml"; mascot → "Garrafa com 1,25 de 2 litros, animada"), touch targets ≥ 44 pt, and layouts verified at the largest non-accessibility Dynamic Type size (research R14)
-- [ ] T093 [P] Create the app icon (`assets/icon.png`, 1024 × 1024, drop with face on the `#D8F2F9 → #9FD8EA` gradient from Sistema §04) and the splash config in `app.config.ts`
+- [X] T093 [P] Create the app icon (`assets/icon.png`, 1024 × 1024, drop with face on the `#D8F2F9 → #9FD8EA` gradient from Sistema §04) and the splash config in `app.config.ts`
 - [ ] T094 [P] Verify dark mode on every screen against contracts/design-tokens.md, including the inverted toast and the slightly grey glass
-- [ ] T095 [P] Add `scripts/check-no-telemetry.mjs` (fails if `package.json` contains analytics/crash SDKs such as `sentry`, `firebase`, `amplitude`, `segment`, `mixpanel`) and run it in `.github/workflows/ci.yml` (Constitution II)
+- [X] T095 [P] Add `scripts/check-no-telemetry.mjs` (fails if `package.json` contains analytics/crash SDKs such as `sentry`, `firebase`, `amplitude`, `segment`, `mixpanel`) and run it in `.github/workflows/ci.yml` (Constitution II)
 - [ ] T096 Measure the sip animation with the RN Performance Monitor on the device (60 fps target, SC-006) and cold start to Home (< 2 s); fix regressions
-- [ ] T097 [P] Write `README.md` (English): what Wotah is, Mac-free setup, scripts, project structure, links to spec/plan/constitution
+- [X] T097 [P] Write `README.md` (English): what Wotah is, Mac-free setup, scripts, project structure, links to spec/plan/constitution
 - [ ] T098 Run the full quickstart.md (automated checks + manual scenarios 1–11 + offline) and then `eas build -p ios --profile preview` to TestFlight; fill the App Store privacy label as "Data Not Collected"
 
 ---

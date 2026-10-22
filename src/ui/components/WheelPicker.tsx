@@ -1,8 +1,9 @@
 import { useRef } from 'react';
 import {
-  FlatList,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   Text,
   View,
@@ -24,7 +25,10 @@ type Props<T> = {
   width?: number;
 };
 
-/** Snapping wheel (weight 30–250 kg, times every 30 min). VoiceOver: adjustable with swipe up/down. */
+/**
+ * Snapping wheel (weight 30–250 kg, times every 30 min). VoiceOver: adjustable with swipe up/down.
+ * A plain ScrollView, not a FlatList: at most ~220 rows, and it lives inside screen ScrollViews.
+ */
 export function WheelPicker<T>({
   values,
   value,
@@ -35,13 +39,21 @@ export function WheelPicker<T>({
   width = 140,
 }: Props<T>) {
   const { colors } = useTheme();
-  const list = useRef<FlatList<T>>(null);
+  const list = useRef<ScrollViewInstance>(null);
+  const positioned = useRef(false);
   const index = Math.max(0, values.indexOf(value));
 
   const select = (i: number, scroll: boolean) => {
     const clamped = Math.min(Math.max(i, 0), values.length - 1);
     if (values[clamped] !== value) onChange(values[clamped]);
-    if (scroll) list.current?.scrollToIndex({ index: clamped, animated: true });
+    if (scroll) list.current?.scrollTo({ y: clamped * ITEM_H, animated: true });
+  };
+
+  // Start on the current value (contentOffset alone is not reliable on Android).
+  const onLayout = () => {
+    if (positioned.current) return;
+    positioned.current = true;
+    list.current?.scrollTo({ y: index * ITEM_H, animated: false });
   };
 
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) =>
@@ -66,22 +78,22 @@ export function WheelPicker<T>({
           { backgroundColor: colors.surface2, top: ITEM_H * Math.floor(VISIBLE / 2) },
         ]}
       />
-      <FlatList
+      <ScrollView
         ref={list}
-        data={values as T[]}
-        keyExtractor={(item) => String(item)}
-        initialScrollIndex={index}
-        getItemLayout={(_, i) => ({ length: ITEM_H, offset: ITEM_H * i, index: i })}
+        nestedScrollEnabled
+        contentOffset={{ x: 0, y: index * ITEM_H }}
+        onLayout={onLayout}
         snapToInterval={ITEM_H}
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
         contentContainerStyle={{ paddingVertical: ITEM_H * Math.floor(VISIBLE / 2) }}
         importantForAccessibility="no-hide-descendants"
-        renderItem={({ item, index: i }) => {
+      >
+        {values.map((item, i) => {
           const selected = i === index;
           return (
-            <View style={styles.item}>
+            <View key={String(item)} style={styles.item}>
               <Text
                 allowFontScaling={false}
                 style={[
@@ -98,8 +110,8 @@ export function WheelPicker<T>({
               </Text>
             </View>
           );
-        }}
-      />
+        })}
+      </ScrollView>
     </View>
   );
 }

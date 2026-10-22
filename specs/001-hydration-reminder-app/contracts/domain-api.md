@@ -13,6 +13,7 @@ export const MIN_WEIGHT_KG = 30;
 export const MAX_WEIGHT_KG = 250;
 export const ML_PER_KG = 35;
 export const MIN_REMINDER_INTERVAL_MIN = 30;
+export const MAX_REMINDER_INTERVAL_MIN = 60;
 
 // goal.ts
 suggestGoalMl(weightKg: number): number                  // FR-009

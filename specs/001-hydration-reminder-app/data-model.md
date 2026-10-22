@@ -152,9 +152,9 @@ Input: `profile`, today's `consumedMl`, `now`, `lastSipAt?`. Output: `Reminder[]
 remainingGlasses = ceil(max(goal − consumed, 0) / 250)
 if !remindersEnabled or remainingGlasses = 0  → today: []          (FR-018, SC-003)
 anchor   = max(now, window.start)                                   (late start / outside window)
-interval = max( (window.end − anchor) / remainingGlasses , 30 min ) (FR-014)
-first    = (lastSipAt ≥ window.start ? lastSipAt : anchor) + interval (FR-015)
-chain: first, first+interval, …  while t ≤ window.end and k ≤ remainingGlasses   (FR-013, SC-004, FR-019)
+interval = clamp( (window.end − anchor) / remainingGlasses , 30 min, 60 min )  (FR-014)
+first    = anchor + interval   (anchor = max(now, window.start); every sip triggers a replan at the sip time, FR-015)
+chain: first, first+interval, …  while t ≤ window.end   (FR-013, SC-004, FR-019; ≤ 24 per window)
 next window: same formula with consumed = 0, anchor = nextWindow.start
 ```
 

@@ -157,4 +157,5 @@ See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
 
 | Potential violation | Why it may be needed | Simpler alternative rejected because |
 |---|---|---|
+| Expression/celebration thresholds repeated inline in `src/widgets/WotahDay.tsx` (Constitution I) | The `'widget'` runtime cannot import `src/domain`, but the button must update the face and celebration immediately with the app closed (FR-024/FR-025) | Leaving the props stale shows a wrong expression and no celebration; drift is prevented by a parity test against `toSurfaceState` (T073) |
 | Swift Expo Module `modules/wotah-native` (conditional, Constitution III) | FR-016/FR-023 require logging a sip without opening the app, exactly once. The `expo-widgets` runtime cannot reach storage or notifications, and iOS background actions may not run JS | "Reconcile on next run" is the accepted default. It is only insufficient if spikes S1/S2 show the pending sips cannot be recovered at all (i.e. they would be lost) |

@@ -80,7 +80,7 @@ validation (spike) before work builds on them (Constitution › Development Work
   - Versioned migrations in code with `PRAGMA user_version`.
   - ⚠️ Spike S3 must confirm that `openDatabaseSync(name, options, directory)` accepts the App Group directory. If not, use the default directory in v1 and move the file only if the native fallback is adopted.
 - **Preferences** (profile): a single-row `profile` table in the same database, which avoids a second mechanism such as AsyncStorage/MMKV.
-- **Alternatives**: AsyncStorage (no queries, and the JSON grows unchecked); MMKV (fast, but another native store that does not help with history); Drizzle ORM (can be added later; for 4 tables plain SQL is simpler).
+- **Alternatives**: AsyncStorage (no queries, and the JSON grows unchecked); MMKV (fast, but another native store that does not help with history); Drizzle ORM (can be added later; for 5 tables plain SQL is simpler).
 
 ## R7. UI state
 

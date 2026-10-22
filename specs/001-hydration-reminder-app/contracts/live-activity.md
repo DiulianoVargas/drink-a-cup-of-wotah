@@ -37,14 +37,27 @@ directive runs in an isolated runtime and can only use `@expo/ui/swift-ui`.
 
 ```ts
 // inside the 'widget' component
-<Button target="drink" onPress={() => ({
-  ...props,
-  consumedMl: props.consumedMl + 250,
-  pendingSips: props.pendingSips + 1,
-  progress: (props.consumedMl + 250) / props.goalMl,
-  seq: props.seq + 1,
-})}>Bebi 💧</Button>
+<Button target="drink" onPress={() => {
+  const consumedMl = props.consumedMl + 250;
+  const p = consumedMl / props.goalMl;
+  return {
+    ...props,
+    consumedMl,
+    pendingSips: props.pendingSips + 1,
+    progress: p,
+    expression: p > 1 ? 'celebrating' : p >= 1 ? 'radiant' : p >= 0.25 ? 'excited' : 'thirsty',
+    celebrating: p >= 1,
+    seq: props.seq + 1,
+  };
+}}>Bebi 💧</Button>
 ```
+
+- **Documented duplication (Constitution I exception)**: the widget runtime cannot import
+  `src/domain`, so the expression thresholds are repeated inline. A parity test
+  (`tests/widgets/WotahDay.parity.test.ts`) MUST assert that `onPress` produces the same
+  `expression`/`celebrating`/`progress` as `toSurfaceState` for 0..6000 ml and every allowed goal.
+- With the app terminated and the goal reached via this button, the activity shows the
+  celebrating state but cannot end itself; it ends on the next app run (`reconcile`).
 
 - Updates the activity on the device, even with the app terminated.
 - With the app alive: `addUserInteractionListener` (compare `event.source` with `instance.getId()`) → `reconcile()` imports `pendingSips`, logs the sips (`source: 'live_activity'`), resets `pendingSips` via `update()` and reschedules.

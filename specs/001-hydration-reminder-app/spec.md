@@ -16,6 +16,7 @@
 ### Session 2026-10-22
 
 - Q: Is the home-screen widget (small/medium/large, designed in `design/Wotah Widgets.html`) part of v1? → A: No. It is deferred to v2 and listed as out of scope.
+- Q: Does SC-003 (no reminders after the goal) hold when the goal is reached by sips logged while the app is not running? → A: Not until the app next runs. Already-scheduled reminders may still arrive in that window; this is accepted for v1 (no native code), consistent with the answer below.
 - Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The Live Activity itself updates immediately. The app's stored total, history and reminder schedule catch up the next time the app runs (pending sips are imported exactly once). The 2-second consistency target (SC-005) applies while the app is running. A native-code path is only adopted if on-device validation shows sips can be lost.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -124,7 +125,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 - **Above the goal**: the app keeps counting (e.g., "2,25 / 2 L"), the bottle stays full with a shine and no reminder is scheduled again.
 - **Notifications denied or later disabled**: manual logging, the bottle and history work. The app indicates reminders are off and how to turn them back on.
 - **Double tap on the "Bebi 💧" action**: each tap logs a sip, and the user can correct it with "Desfazer".
-- **Sip logged outside the app while the app is not running** (notification action or live activity button): the sip MUST NOT be lost or counted twice. Until the app runs again, already-scheduled reminders may arrive as originally planned (at most one reminder earlier than the recomputed schedule would place it).
+- **Sip logged outside the app while the app is not running** (notification action or live activity button): the sip MUST NOT be lost or counted twice. Until the app runs again, already-scheduled reminders keep their original times (so they may arrive earlier than the recomputed schedule would place them, or after the goal was reached that way); the schedule is corrected as soon as the app runs.
 - **Device without Dynamic Island or OS version without interactive buttons**: the activity appears only where supported (e.g., lock screen). Without the interactive button, tapping the activity opens the app.
 - **Time zone or clock change**: the app always uses the device's current local time to compute the day and the window.
 - **Weight out of range**: the app accepts weights between 30 kg and 250 kg. The goal is limited to 0.5 L–6 L.
@@ -165,7 +166,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 **Dynamic Island / live activity**
 
 - **FR-021**: On supported devices, when the app opens on a day whose goal is not met, the app MUST start a live activity if none is running.
-- **FR-022**: The activity MUST show: in compact form, a drop/mini-bottle and "X / Y L" progress; in minimal form, a drop with a progress ring; in expanded form and on the lock screen, a progress bar, the countdown to the next reminder and a "Bebi 💧" button.
+- **FR-022**: The activity MUST show: in compact form, a drop/mini-bottle and "X / Y L" progress; in minimal form, a drop with a progress ring; in expanded form and on the lock screen, a progress bar, the countdown to the next reminder and a "Bebi 💧" button. When reminders are off or notifications are not allowed, the countdown line is hidden.
 - **FR-023**: The activity's "Bebi 💧" button MUST log a sip without opening the app and update the activity immediately. The app's stored total and reminders MUST reflect it within 2 s while the app is running, or the next time the app runs otherwise, exactly once.
 - **FR-024**: The activity MUST reflect every sip logged by any means.
 - **FR-025**: When the goal is met, the activity MUST briefly show "Bom trabalho! 🎉" and then end.
@@ -198,7 +199,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 
 - **SC-001**: A new user completes onboarding in under 1 minute.
 - **SC-002**: Logging a sip from a notification or the Dynamic Island takes at most 1 tap and does not require opening the app.
-- **SC-003**: After the goal is met, 0 reminders are delivered until the start of the next day, in 100% of tested days.
+- **SC-003**: After the goal is met, 0 reminders are delivered until the start of the next day, in 100% of tested days. Exception: when the goal is reached by sips logged outside the app while it is not running, already-scheduled reminders may still arrive until the app next runs; from then on, 0 reminders are delivered that day.
 - **SC-004**: No reminder is delivered outside the awake window, in 100% of tested days.
 - **SC-005**: While the app is running, after any sip the total shown in the app, in the live activity and the next reminder are consistent with each other within 2 seconds. When the sip happens while the app is not running, they become consistent within 2 seconds of the app next running, with no sip lost or duplicated.
 - **SC-006**: The bottle animation when logging a sip runs smoothly, with no perceptible stutter, on compatible devices.

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { awakeHint, formatTimeOfDay } from '@/domain/settingsCopy';
 import { useOnboardingDraft } from '@/state/onboardingDraft';
@@ -10,6 +10,7 @@ import { useTheme } from '@/ui/theme/useTheme';
 
 /** Onboarding 3/4 (FR-008): wake and sleep times. */
 export default function ScheduleStep() {
+  const router = useRouter();
   const { colors } = useTheme();
   const { wakeMinutes, sleepMinutes, dailyGoalMl, setWake, setSleep } = useOnboardingDraft();
   return (

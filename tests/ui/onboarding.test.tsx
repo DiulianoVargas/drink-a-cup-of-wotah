@@ -9,7 +9,9 @@ import { useOnboardingDraft } from '@/state/onboardingDraft';
 const mockPush = jest.fn();
 const mockComplete = jest.fn(async () => null);
 const mockRequest = jest.fn(async () => 'granted');
-jest.mock('expo-router', () => ({ router: { push: (href: string) => mockPush(href) } }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: (href: string) => mockPush(href) }),
+}));
 jest.mock('@/usecases/container', () => ({
   getApp: () => ({ completeOnboarding: mockComplete }),
 }));

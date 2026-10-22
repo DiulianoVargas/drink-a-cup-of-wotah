@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ type Editing = null | 'weight' | 'wake' | 'sleep';
 /** Ajustes (FR-011, FR-012): every change applies immediately and keeps today's total. */
 export default function Settings() {
   const { colors } = useTheme();
+  const router = useRouter();
   const profile = useWotahStore((s) => s.profile);
   const [editing, setEditing] = useState<Editing>(null);
   /** FR-012: the new-goal offer appears only right after a weight change, until answered. */

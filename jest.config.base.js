@@ -4,8 +4,8 @@ module.exports = {
   preset: 'jest-expo/ios',
   roots: ['<rootDir>/tests'],
   setupFiles: ['<rootDir>/tests/setup.ts'],
-  // Resolve worklets to their JS (non-native) entry points under Jest.
-  resolver: 'react-native-worklets/jest/resolver',
+  // Reanimated's Jest resolver (wraps the Worklets one) picks the JS entry points.
+  resolver: 'react-native-reanimated/jest/resolver',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

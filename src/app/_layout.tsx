@@ -33,7 +33,7 @@ export default function RootLayout() {
     bootApp().catch((e) => console.error('[boot] failed', e));
     // Every return to the foreground re-reads the day (rollover, clock/time zone changes).
     const sub = AppState.addEventListener('change', (next) => {
-      if (appState.current.match(/inactive|background/) && next === 'active') {
+      if (appState.current?.match(/inactive|background/) && next === 'active') {
         onForeground().catch((e) => console.warn('[reconcile] failed', e));
       }
       appState.current = next;
@@ -52,13 +52,16 @@ export default function RootLayout() {
       <StatusBar style={dark ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         {/* FR-008: onboarding until the profile is complete, then the app. */}
-        <Stack.Protected guard={onboarded}>
+        <Stack.Protected guard={onboarded} redirectTo="/weight">
           <Stack.Screen name="(main)" />
         </Stack.Protected>
-        <Stack.Protected guard={!onboarded}>
+        <Stack.Protected guard={!onboarded} redirectTo="/">
           <Stack.Screen name="(onboarding)" />
         </Stack.Protected>
-        <Stack.Screen name="dev/tools" options={{ headerShown: true, title: 'Dev tools' }} />
+        <Stack.Screen
+          name="dev/tools"
+          options={{ headerShown: true, headerTransparent: false, title: 'Dev tools' }}
+        />
       </Stack>
     </>
   );

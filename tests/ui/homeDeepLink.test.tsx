@@ -6,6 +6,7 @@ import { PROFILE } from '../helpers/fakes';
 
 const mockRegisterSip = jest.fn(async () => null);
 const mockSetParams = jest.fn();
+const mockRouter = { setParams: (p: unknown) => mockSetParams(p) };
 let mockParams: { sip?: string } = {};
 jest.mock('@/usecases/container', () => ({
   getApp: () => ({ registerSip: mockRegisterSip, undoLastSip: jest.fn() }),
@@ -13,7 +14,7 @@ jest.mock('@/usecases/container', () => ({
 jest.mock('expo-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   useLocalSearchParams: () => mockParams,
-  router: { setParams: (p: unknown) => mockSetParams(p) },
+  useRouter: () => mockRouter,
 }));
 
 const metrics = {

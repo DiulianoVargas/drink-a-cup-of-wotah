@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { suggestGoalMl } from '@/domain/goal';
 import { glassesText, goalSuggestionText } from '@/domain/settingsCopy';
@@ -10,6 +10,7 @@ import { useTheme } from '@/ui/theme/useTheme';
 
 /** Onboarding 2/4 (FR-009, FR-010): suggested goal, editable in 250 ml steps. */
 export default function GoalStep() {
+  const router = useRouter();
   const { colors } = useTheme();
   const { weightKg, dailyGoalMl, setGoal } = useOnboardingDraft();
   const suggested = suggestGoalMl(weightKg);

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useOnboardingDraft } from '@/state/onboardingDraft';
 import { OnboardingScaffold } from '@/ui/components/OnboardingScaffold';
 import { WheelPicker } from '@/ui/components/WheelPicker';
@@ -6,6 +6,7 @@ import { WEIGHTS } from '@/ui/pickerValues';
 
 /** Onboarding 1/4 (FR-008): weight wheel 30–250 kg, starting at 70. */
 export default function WeightStep() {
+  const router = useRouter();
   const weightKg = useOnboardingDraft((s) => s.weightKg);
   const setWeight = useOnboardingDraft((s) => s.setWeight);
   return (

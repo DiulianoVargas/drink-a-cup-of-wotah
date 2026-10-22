@@ -191,3 +191,10 @@ Phase 2. They contradict part of R5 and must be confirmed by spike S2 on the dev
   idempotency keys as the live listener. When iOS launches the terminated app for the
   LiveActivityIntent, the JS bundle boots in the background and processes the queue, rescheduling
   reminders and updating the activity. Spike S2(b) now validates this path.
+- **SDK 58 (2026-10-22, owner decision; supersedes R1's "SDK 57")**: SDK 58 went stable on 2026-10-16
+  (RN 0.88, React 19.3, iOS 27). Changes applied: Expo Router 58 (`Stack.Protected` with explicit
+  `redirectTo`, `initialRouteName` removed, `useRouter()` instead of the module-level `router`),
+  Jest resolver from `react-native-reanimated/jest/resolver` (Worklets 0.13), removed the unused
+  `expo-symbols`. expo-widgets 58 keeps the same `onExpoWidgetsUserInteraction` notification and
+  `ExpoWidgetsAppGroupIdentifier` key, so `modules/wotah-native` is unchanged. Caveat: the App Store
+  Expo Go supports SDK 58 only "within a few weeks"; until then, test on a development build.

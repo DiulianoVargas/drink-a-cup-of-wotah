@@ -1,4 +1,4 @@
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -41,6 +41,7 @@ export default function Home() {
   const [flightKey, setFlightKey] = useState(0);
 
   // iOS < 17: the Live Activity has no button, so tapping it opens wotah:///?sip=1 (T082).
+  const router = useRouter();
   const { sip } = useLocalSearchParams<{ sip?: string }>();
   useEffect(() => {
     if (sip !== '1') return;
@@ -49,7 +50,7 @@ export default function Home() {
       eventKey: `la-tap:${Date.now()}`,
       showUndoToast: true,
     });
-  }, [sip]);
+  }, [sip, router]);
 
   // FR-018: success haptic whenever the day reaches its goal (any source).
   useEffect(() => {

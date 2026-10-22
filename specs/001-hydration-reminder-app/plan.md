@@ -23,9 +23,9 @@ only if spikes S1/S2 show sips would be lost.
 
 ## Technical Context
 
-**Language/Version**: TypeScript (`strict`) on React Native 0.86 / React 19.2 (Expo SDK 57, patch ≥ 57.0.17). Swift only in the conditional fallback (`modules/wotah-native`).
+**Language/Version**: TypeScript (`strict`) on React Native 0.88 / React 19.3 (Expo SDK 58; upgraded from 57 on 2026-10-22, see research R1). Swift only in the conditional fallback (`modules/wotah-native`).
 
-**Primary Dependencies**: `expo` 57, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` and `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`.
+**Primary Dependencies**: `expo` 58, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` and `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`.
 
 **Storage**: local SQLite (`expo-sqlite`) with the database in the App Group `group.<bundleId>` (pending spike S3). Schema in [data-model.md](./data-model.md#2-persistence-sqlite-srcservicesdb). No server (FR-031).
 

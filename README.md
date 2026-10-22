@@ -9,7 +9,7 @@ The app UI is in Brazilian Portuguese. Code and docs are in English.
 
 ## Stack
 
-- **Expo SDK 57** (React Native 0.86, React 19.2) with Continuous Native Generation (no `ios/` folder
+- **Expo SDK 58** (React Native 0.88, React 19.3) with Continuous Native Generation (no `ios/` folder
   is committed)
 - `expo-widgets` + `@expo/ui` for the Live Activity / Dynamic Island
 - `expo-notifications` for local reminders with the "Bebi 💧" action
@@ -28,8 +28,9 @@ npx eas-cli build -p ios --profile development    # cloud dev client
 npx expo start --dev-client                       # Metro on Windows/Linux/macOS
 ```
 
-Expo Go is not supported (widgets, Live Activities and notification categories need a development
-build). Rebuild natively only when a native dependency or `app.config.ts` changes.
+Expo Go runs everything except the Live Activity and the Swift module (`npm run go`), but the App
+Store Expo Go only supports the newest SDK: SDK 58 support is due a few weeks after 2026-10-16.
+The full app (Live Activity, Swift module) needs a development build. Rebuild natively only when a native dependency or `app.config.ts` changes.
 
 ## Scripts
 

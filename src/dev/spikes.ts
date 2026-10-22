@@ -1,8 +1,8 @@
 // Dev-only instrumentation for spikes S1–S4 (research › Required spikes).
 // Imported at the top of src/app/_layout.tsx so listeners exist before any event is delivered.
 import * as Notifications from 'expo-notifications';
-import { addUserInteractionListener } from 'expo-widgets';
 import { getDb } from '@/services/db/client';
+import { loadWidgets } from '@/services/nativeWidgets';
 
 export const SPIKE_CATEGORY = 'WOTAH_SPIKE';
 
@@ -41,7 +41,7 @@ export function registerSpikeListeners() {
     record('notif-last', `${last.notification.request.identifier}:${last.actionIdentifier}`);
 
   // S2: Live Activity button events (only delivered while JS is observing).
-  addUserInteractionListener((e) => record('la-event', `${e.source}:${e.target}`));
+  loadWidgets()?.addUserInteractionListener((e) => record('la-event', `${e.source}:${e.target}`));
 }
 
 export async function scheduleSpikeNotification() {

@@ -3,10 +3,19 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { clearSpikeLog, scheduleSpikeNotification, seedWeek, spikeLog } from '@/dev/spikes';
 import { dbInfo } from '@/services/db/client';
-import { spikeActivity } from '@/widgets/SpikeActivity';
+import { hasLiveActivities } from '@/services/nativeWidgets';
 import { useWotahStore } from '@/state/store';
 import { useTheme } from '@/ui/theme/useTheme';
 import { getApp } from '@/usecases/container';
+
+/** The spike Live Activity needs the native module (not in Expo Go). */
+const spike = () => {
+  if (!hasLiveActivities)
+    throw new Error('Live Activities indisponíveis (Expo Go ou sem build nativo)');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return (require('@/widgets/SpikeActivity') as typeof import('@/widgets/SpikeActivity'))
+    .spikeActivity;
+};
 
 /** Dev-only screen to run spikes S1–S4 on the device (quickstart › Spikes). */
 export default function DevTools() {
@@ -34,17 +43,25 @@ export default function DevTools() {
       <Button
         label="S2/S4 · Iniciar Live Activity de teste"
         onPress={run('S2', () =>
-          spikeActivity.start({ count: 0, pending: 0, seq: 0, imagePath: null }).getId(),
+          spike().start({ count: 0, pending: 0, seq: 0, imagePath: null }).getId(),
         )}
       />
       <Button
         label="S2 · Instâncias ativas"
-        onPress={run('S2 instances', () => spikeActivity.getInstances().map((i) => i.getId()))}
+        onPress={run('S2 instances', () =>
+          spike()
+            .getInstances()
+            .map((i) => i.getId()),
+        )}
       />
       <Button
         label="S2 · Encerrar atividades"
         onPress={run('S2 end', () =>
-          Promise.all(spikeActivity.getInstances().map((i) => i.end('immediate'))),
+          Promise.all(
+            spike()
+              .getInstances()
+              .map((i) => i.end('immediate')),
+          ),
         )}
       />
       <Button label="S3 · Caminho do banco" onPress={run('S3', dbInfo)} />

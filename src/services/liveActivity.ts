@@ -1,4 +1,4 @@
-import { after, type LiveActivityFactory } from 'expo-widgets';
+import type { LiveActivityDismissalPolicy, LiveActivityFactory } from 'expo-widgets';
 import { Platform } from 'react-native';
 import type { SurfaceState } from '@/domain/types';
 import type { LiveActivityPort } from '@/usecases/ports';
@@ -27,7 +27,8 @@ export function createLiveActivityAdapter(
       await Promise.all(instances().map((i) => i.update(state)));
     },
     async end(state, dismissAfterMs) {
-      const policy = after(new Date(Date.now() + dismissAfterMs));
+      // Same shape as expo-widgets' after(date), without importing the native module.
+      const policy: LiveActivityDismissalPolicy = { after: new Date(Date.now() + dismissAfterMs) };
       await Promise.all(instances().map((i) => i.end(policy, state)));
     },
   };

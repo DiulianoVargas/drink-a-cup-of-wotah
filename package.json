@@ -54,7 +54,8 @@
     "test": "jest && jest -c jest.lisbon.config.js",
     "format": "prettier --write .",
     "doctor": "npx expo-doctor",
-    "check:privacy": "node scripts/check-no-telemetry.mjs"
+    "check:privacy": "node scripts/check-no-telemetry.mjs",
+    "go": "expo start --go"
   },
   "private": true
 }

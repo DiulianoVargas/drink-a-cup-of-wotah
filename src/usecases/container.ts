@@ -5,8 +5,6 @@ import { createSipRepo } from '@/services/db/sipRepo';
 import { drainPendingInteractions } from '../../modules/wotah-native';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
-import { addUserInteractionListener } from 'expo-widgets';
-import { Platform } from 'react-native';
 import {
   configureForegroundPresentation,
   registerNotificationCategories,
@@ -15,9 +13,9 @@ import { getPermission } from '@/services/notifications/permissions';
 import { handleNotificationResponse } from '@/services/notifications/responses';
 import { createNotificationScheduler } from '@/services/notifications/scheduler';
 import { createLiveActivityAdapter } from '@/services/liveActivity';
+import { hasLiveActivities, loadWidgets } from '@/services/nativeWidgets';
 import { storeSink, useWotahStore } from '@/state/store';
 import { createApp, type App } from './app';
-import { wotahDay } from '@/widgets/WotahDay';
 import { createLiveActivityEffect } from './effects/liveActivity';
 import { createReminderEffect } from './effects/reminders';
 import {
@@ -40,7 +38,10 @@ export function getApp(): App {
     const scheduler = createNotificationScheduler(db);
     // Platform side effects, in order: the Live Activity needs the freshly planned next reminder.
     const effects: Effect[] = [createReminderEffect(scheduler)];
-    if (Platform.OS === 'ios') {
+    if (hasLiveActivities) {
+      // Lazy: the widget file imports expo-widgets, which needs the native module (not in Expo Go).
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { wotahDay } = require('@/widgets/WotahDay') as typeof import('@/widgets/WotahDay');
       const liveActivity = createLiveActivityAdapter(wotahDay, (sipOnTap) =>
         Linking.createURL('/', sipOnTap ? { queryParams: { sip: '1' } } : undefined),
       );
@@ -85,13 +86,11 @@ export function listenToSystemEvents(): void {
       console.warn('[notifications] response failed', e),
     );
   });
-  if (Platform.OS === 'ios') {
-    addUserInteractionListener((event) => {
-      handleLiveActivityInteraction(getApp(), event).catch((e) =>
-        console.warn('[live activity] interaction failed', e),
-      );
-    });
-  }
+  loadWidgets()?.addUserInteractionListener((event) => {
+    handleLiveActivityInteraction(getApp(), event).catch((e) =>
+      console.warn('[live activity] interaction failed', e),
+    );
+  });
 }
 
 /** Live Activity taps the Swift module queued while JS was not running (Phase 9). */

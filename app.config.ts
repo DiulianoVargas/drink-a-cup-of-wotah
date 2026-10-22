@@ -6,6 +6,7 @@ const APP_GROUP = `group.${BUNDLE_ID}`;
 const config: ExpoConfig = {
   name: 'Wotah',
   slug: 'wotah',
+  owner: 'diulidsvargas',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
@@ -48,6 +49,7 @@ const config: ExpoConfig = {
   },
   extra: {
     appGroup: APP_GROUP,
+    eas: { projectId: '444f8b6a-860f-41b2-8b38-4f780fd2ed1f' },
   },
 };
 

@@ -49,7 +49,7 @@ describe('Onboarding (US2, FR-008, SC-001)', () => {
     expect(mockPush).toHaveBeenLastCalledWith('/schedule');
 
     await show(ScheduleStep);
-    expect(screen.getByText('14 horas acordado · um lembrete a cada ~1h24')).toBeTruthy();
+    expect(screen.getByText('14 horas acordado · um lembrete a cada ~1h')).toBeTruthy();
     await fireEvent.press(screen.getByText('Continuar'));
     expect(mockPush).toHaveBeenLastCalledWith('/permission');
   });

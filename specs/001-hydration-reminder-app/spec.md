@@ -16,6 +16,7 @@
 ### Session 2026-10-22
 
 - Q: Is the home-screen widget (small/medium/large, designed in `design/Wotah Widgets.html`) part of v1? → A: No. It is deferred to v2 and listed as out of scope.
+- Q: How far apart can reminders be? → A: Never more than 1 hour (and never less than 30 minutes); when there are more hours than glasses left, reminders come hourly. A reminder exactly at bedtime is allowed; none after it.
 - Q: Does SC-003 (no reminders after the goal) hold when the goal is reached by sips logged while the app is not running? → A: Not until the app next runs. Already-scheduled reminders may still arrive in that window; this is accepted for v1 (no native code), consistent with the answer below.
 - Q: On devices without the interactive live activity button (older OS), what does tapping the activity do? → A: It opens the app and logs a sip with the "Desfazer" toast, like tapping a reminder's body, so logging stays one tap from every entry point.
 - Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The tap is captured natively and processed when iOS wakes the app in the background (usually within seconds), exactly once; the activity, history and reminders then update. If processing is delayed, it completes the next time the app runs. (Updated 2026-10-22: a small native module was adopted because the Live Activity button cannot run JavaScript.)
@@ -68,7 +69,7 @@ During the awake window, the app reminds the user to drink water at intervals co
 
 **Acceptance Scenarios**:
 
-1. **Given** a 2 L goal, 0 ml drunk and an 8:00–22:00 window, **When** the day starts at 8:00, **Then** reminders are spaced ~1h45 apart (14 h ÷ 8 glasses).
+1. **Given** a 2 L goal, 0 ml drunk and an 8:00–22:00 window, **When** the day starts at 8:00, **Then** reminders arrive every hour (14 h ÷ 8 glasses = 1h45, capped at 1 h), the last one at bedtime.
 2. **Given** a reminder notification, **When** the user taps "Bebi 💧", **Then** 250 ml is logged without opening the app and the next reminder is rescheduled based on the new remainder.
 3. **Given** a reminder notification, **When** the user taps the notification body, **Then** the app opens with 250 ml logged and the "Desfazer" toast visible.
 4. **Given** the user logged a sip with "+" at 10:00, **When** the next reminder was due at 10:15, **Then** it is rescheduled to 10:00 + the recomputed interval.
@@ -156,7 +157,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 **Reminders**
 
 - **FR-013**: The app MUST schedule reminders only within the user's awake window.
-- **FR-014**: The interval between reminders MUST be the remaining window time divided by the number of glasses remaining to the goal, with a 30-minute minimum.
+- **FR-014**: The interval between reminders MUST be the remaining window time divided by the number of glasses remaining to the goal, with a 30-minute minimum and a 1-hour maximum.
 - **FR-015**: Every sip logged, by any means, MUST reschedule the next reminder to the time of the sip plus the recomputed interval. For sips logged outside the app while it is not running, rescheduling happens the next time the app runs (see Clarifications).
 - **FR-016**: Reminders MUST have a "Bebi 💧" action that logs a sip without opening the app.
 - **FR-017**: Tapping the body of a reminder MUST open the app, log a sip and show the "Desfazer" toast.

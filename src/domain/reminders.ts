@@ -1,4 +1,10 @@
-import { GLASS_ML, MIN_REMINDER_INTERVAL_MIN, MINUTES_PER_DAY, MS_PER_MINUTE } from './constants';
+import {
+  GLASS_ML,
+  MAX_REMINDER_INTERVAL_MIN,
+  MIN_REMINDER_INTERVAL_MIN,
+  MINUTES_PER_DAY,
+  MS_PER_MINUTE,
+} from './constants';
 import { dayKeyFor, nextWindow, windowFor } from './day';
 import { pickMessage } from './messages';
 import type { DayKey, Profile, Reminder } from './types';
@@ -11,10 +17,13 @@ export const awakeMinutes = ({
 }: Pick<Profile, 'wakeMinutes' | 'sleepMinutes'>) =>
   (sleepMinutes - wakeMinutes + MINUTES_PER_DAY) % MINUTES_PER_DAY;
 
-/** Whole-day estimate for the schedule hint: awake time ÷ glasses, at least 30 min (FR-014). */
+const clampInterval = (minutes: number) =>
+  Math.min(Math.max(minutes, MIN_REMINDER_INTERVAL_MIN), MAX_REMINDER_INTERVAL_MIN);
+
+/** Whole-day estimate for the schedule hint: awake time ÷ glasses, between 30 min and 1 h (FR-014). */
 export function estimateIntervalMinutes(routine: Routine): number {
   const glasses = Math.max(1, routine.dailyGoalMl / GLASS_ML);
-  return Math.max(MIN_REMINDER_INTERVAL_MIN, Math.floor(awakeMinutes(routine) / glasses));
+  return Math.floor(clampInterval(awakeMinutes(routine) / glasses));
 }
 
 const remainingGlasses = (goalMl: number, consumedMl: number) =>
@@ -23,7 +32,7 @@ const remainingGlasses = (goalMl: number, consumedMl: number) =>
 const daySeed = (dayKey: DayKey) => Number(dayKey.replace(/-/g, ''));
 
 /**
- * One window's chain (data-model §4): interval = time left ÷ glasses left (min 30 min), first one
+ * One window's chain (data-model §4): interval = time left ÷ glasses left (30 min–1 h), first one
  * an interval after `now` (or after the wake time), none after bedtime (FR-013–FR-015).
  * A reminder exactly at bedtime is allowed, so the last glass is always reminded (FR-019).
  */
@@ -39,9 +48,10 @@ function chain(
   const end = window.end.getTime();
   if (remaining === 0 || anchor >= end) return [];
 
-  const interval = Math.max((end - anchor) / remaining, MIN_REMINDER_INTERVAL_MIN * MS_PER_MINUTE);
+  // At most 24 per window: the 1 h cap only applies when a window has more hours than glasses left.
+  const interval = clampInterval((end - anchor) / remaining / MS_PER_MINUTE) * MS_PER_MINUTE;
   const out: Omit<Reminder, 'index'>[] = [];
-  for (let k = 1; k <= remaining; k++) {
+  for (let k = 1; ; k++) {
     const fireAt = Math.round(anchor + k * interval);
     if (fireAt > end) break;
     out.push({

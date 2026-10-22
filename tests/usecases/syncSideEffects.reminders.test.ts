@@ -16,10 +16,12 @@ describe('reminder effect (FR-015, FR-018, FR-019)', () => {
     const { deps, app } = await setup(at('2026-10-22', '10:00'));
     await app.reconcile();
     const before = today(deps)[0].fireAt;
-    await app.registerSip('button');
+    deps.clock.advanceMinutes(20);
+    await app.registerSip('button'); // 10:20 → next at 11:20 (1 h cap)
     const after = today(deps)[0].fireAt;
     expect(after).not.toBe(before);
     expect(new Date(after).getHours()).toBe(11);
+    expect(new Date(after).getMinutes()).toBe(20);
     expect(deps.sink.last.nextReminderAt).toBe(after);
   });
 

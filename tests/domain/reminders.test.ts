@@ -20,29 +20,49 @@ const forDay = <T extends { dayKey: string }>(rs: T[], dayKey: string) =>
   rs.filter((r) => r.dayKey === dayKey);
 
 describe('planReminders (FR-013–FR-019, data-model §4)', () => {
-  it('AS-3.1: 2 L, 8h–22h, 0 ml at 08:00 → 8 reminders every 1h45, the last at bedtime (not after it)', () => {
+  it('AS-3.1: 2 L, 8h–22h, 0 ml at 08:00 → 14 h ÷ 8 = 1h45, capped at 1 h → hourly until bedtime', () => {
     const plan = planReminders({ profile, consumedMl: 0, now: at('2026-10-22', '08:00') });
     expect(times(forDay(plan, '2026-10-22'))).toEqual([
-      '09:45',
-      '11:30',
-      '13:15',
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+      '13:00',
+      '14:00',
       '15:00',
-      '16:45',
-      '18:30',
-      '20:15',
+      '16:00',
+      '17:00',
+      '18:00',
+      '19:00',
+      '20:00',
+      '21:00',
       '22:00',
     ]);
   });
 
+  it('below the 1 h cap the computed interval is used as is', () => {
+    // 3 L (12 glasses) over 14 h = 70 min → capped to 60; 4 L (16) over 14 h = 52.5 min → kept
+    const plan = forDay(
+      planReminders({
+        profile: { ...profile, dailyGoalMl: 4000 },
+        consumedMl: 0,
+        now: at('2026-10-22', '08:00'),
+      }),
+      '2026-10-22',
+    );
+    expect(times(plan).slice(0, 2)).toEqual(['08:52', '09:45']);
+    expect(plan).toHaveLength(16);
+  });
+
   it('AS-3.4: a sip at 10:00 reschedules from the sip with the recomputed interval', () => {
-    // 1 glass drunk → 7 left; (22:00 − 10:00) ÷ 7 = 102.86 min → first at ~11:42
     const plan = forDay(
       planReminders({ profile, consumedMl: 250, now: at('2026-10-22', '10:00') }),
       '2026-10-22',
     );
-    expect(times(plan)[0]).toBe('11:42');
-    expect(plan).toHaveLength(7);
-    expect(times(plan)[6]).toBe('22:00');
+    // 7 left over 12 h = 1h43 → capped at 1 h → 11:00 … 22:00
+    expect(times(plan)[0]).toBe('11:00');
+    expect(plan).toHaveLength(12);
+    expect(times(plan)[11]).toBe('22:00');
   });
 
   it('AS-3.5 / SC-003: goal met → no reminders today, only the next day', () => {
@@ -60,22 +80,20 @@ describe('planReminders (FR-013–FR-019, data-model §4)', () => {
     const plan = planReminders({ profile, consumedMl: 500, now: at('2026-10-22', '23:00') });
     expect(forDay(plan, '2026-10-22')).toEqual([]);
     const tomorrow = forDay(plan, '2026-10-23');
-    expect(times(tomorrow)[0]).toBe('09:45');
+    expect(times(tomorrow)[0]).toBe('09:00');
     expect(tomorrow.every((r) => r.fireAt > at('2026-10-23', '08:00').getTime())).toBe(true);
   });
 
   it('before the wake time, the coming morning is the next window (sleep → wake gap)', () => {
     const plan = planReminders({ profile, consumedMl: 0, now: at('2026-10-23', '06:00') });
     expect(forDay(plan, '2026-10-22')).toEqual([]);
-    expect(times(forDay(plan, '2026-10-23'))[0]).toBe('09:45');
+    expect(times(forDay(plan, '2026-10-23'))[0]).toBe('09:00');
   });
 
   it('AS-3.7 / FR-019: after undoing one sip below the goal, a reminder returns', () => {
-    // 1 glass left over 4 h → the single reminder lands at bedtime (allowed: not *after* it).
+    // 1 glass left over 4 h → 4 h interval, capped at 1 h; the last one at bedtime is allowed.
     const plan = planReminders({ profile, consumedMl: 1750, now: at('2026-10-22', '18:00') });
-    const plan2 = planReminders({ profile, consumedMl: 1500, now: at('2026-10-22', '18:00') });
-    expect(times(forDay(plan, '2026-10-22'))).toEqual(['22:00']);
-    expect(times(forDay(plan2, '2026-10-22'))).toEqual(['20:00', '22:00']);
+    expect(times(forDay(plan, '2026-10-22'))).toEqual(['19:00', '20:00', '21:00', '22:00']);
   });
 
   it('late start at 15:00 uses the remaining window, not the whole day', () => {
@@ -102,8 +120,8 @@ describe('planReminders (FR-013–FR-019, data-model §4)', () => {
       planReminders({ profile: night, consumedMl: 1500, now: at('2026-10-22', '22:00') }),
       '2026-10-22',
     );
-    // 3 h ÷ 2 glasses = 90 min → 23:30 and 01:00 (bedtime, next calendar day)
-    expect(times(plan)).toEqual(['23:30', '01:00']);
+    // 3 h ÷ 2 glasses = 90 min → capped at 1 h → 23:00, 00:00, 01:00 (bedtime, next calendar day)
+    expect(times(plan)).toEqual(['23:00', '00:00', '01:00']);
   });
 
   it('reminders off → nothing at all', () => {
@@ -118,13 +136,19 @@ describe('planReminders (FR-013–FR-019, data-model §4)', () => {
   it('the next window is planned from 0 ml with the profile goal', () => {
     const plan = planReminders({ profile, consumedMl: 1000, now: at('2026-10-22', '12:00') });
     expect(times(forDay(plan, '2026-10-23'))).toEqual([
-      '09:45',
-      '11:30',
-      '13:15',
+      '09:00',
+      '10:00',
+      '11:00',
+      '12:00',
+      '13:00',
+      '14:00',
       '15:00',
-      '16:45',
-      '18:30',
-      '20:15',
+      '16:00',
+      '17:00',
+      '18:00',
+      '19:00',
+      '20:00',
+      '21:00',
       '22:00',
     ]);
   });

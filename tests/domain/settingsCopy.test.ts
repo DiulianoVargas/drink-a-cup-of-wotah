@@ -23,8 +23,9 @@ describe('onboarding and settings copy (design/Wotah Telas.html)', () => {
   });
 
   it.each([
-    [hm(8), hm(22), 2000, '14 horas acordado · um lembrete a cada ~1h45'],
-    [hm(7, 30), hm(22), 2500, '14h30 acordado · um lembrete a cada ~1h27'],
+    [hm(8), hm(22), 2000, '14 horas acordado · um lembrete a cada ~1h'],
+    [hm(7, 30), hm(22), 2500, '14h30 acordado · um lembrete a cada ~1h'],
+    [hm(8), hm(22), 4000, '14 horas acordado · um lembrete a cada ~52 min'],
     [hm(8), hm(10), 2000, '2 horas acordado · um lembrete a cada ~30 min'],
   ])('awakeHint(%i, %i, %i) → %s', (wake, sleep, goal, expected) => {
     expect(awakeHint({ wakeMinutes: wake, sleepMinutes: sleep, dailyGoalMl: goal })).toBe(expected);
@@ -33,7 +34,7 @@ describe('onboarding and settings copy (design/Wotah Telas.html)', () => {
   it('reminders description', () => {
     expect(
       remindersDescription({ wakeMinutes: hm(8), sleepMinutes: hm(22), dailyGoalMl: 2000 }),
-    ).toBe('Um lembrete a cada ~1h45, das 8h às 22h. Quando você bate a meta, eu paro até amanhã.');
+    ).toBe('Um lembrete a cada ~1h, das 8h às 22h. Quando você bate a meta, eu paro até amanhã.');
   });
 
   it('suggest-goal card after a weight change (FR-012)', () => {

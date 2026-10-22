@@ -56,3 +56,19 @@ describe('sipRepo', () => {
     expect(repo.lastSipAt('2026-10-22')).toBe(1000);
   });
 });
+
+describe('sipRepo.allSummaries (US5)', () => {
+  it('returns every recorded day with its own goal and total (undone sips excluded)', async () => {
+    const repo = createSipRepo(await createTestDb());
+    repo.add(sip('a', 1000, '2026-10-20'), 1500);
+    repo.add(sip('b', 2000, '2026-10-22'), 2000);
+    repo.add(sip('c', 3000, '2026-10-22'), 2000);
+    repo.undoLast('2026-10-22', 4000);
+    repo.setDayGoal('2026-10-21', 2500); // goal changed on a day with no sips
+    expect(repo.allSummaries()).toEqual([
+      { dayKey: '2026-10-20', goalMl: 1500, consumedMl: 250 },
+      { dayKey: '2026-10-21', goalMl: 2500, consumedMl: 0 },
+      { dayKey: '2026-10-22', goalMl: 2000, consumedMl: 250 },
+    ]);
+  });
+});

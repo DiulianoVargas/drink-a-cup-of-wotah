@@ -71,6 +71,15 @@ export function createSipRepo(db: SqlDb): SipRepository {
       );
     },
 
+    allSummaries() {
+      return db.getAll<{ dayKey: string; goalMl: number; consumedMl: number }>(
+        `SELECT d.day_key AS dayKey, d.goal_ml AS goalMl,
+                COALESCE(SUM(CASE WHEN s.undone_at IS NULL THEN s.amount_ml END), 0) AS consumedMl
+         FROM day d LEFT JOIN sip s ON s.day_key = d.day_key
+         GROUP BY d.day_key ORDER BY d.day_key`,
+      );
+    },
+
     setDayGoal(dayKey: DayKey, goalMl: number) {
       db.run(
         `INSERT INTO day (day_key, goal_ml, updated_at) VALUES (?, ?, ?)

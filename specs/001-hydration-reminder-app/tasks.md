@@ -230,16 +230,16 @@ expanded "Bebi 💧" logs a sip and everything agrees (quickstart scenarios 6–
 
 ### Tests for User Story 5 (write first, must fail) ⚠️
 
-- [ ] T084 [P] [US5] Table tests in `tests/domain/history.test.ts` for `classifyDay` (0 → empty; 0 < x < goal → partial; ≥ goal → full; AS-5.1) and `computeStreak` (met yesterday and the day before, today not yet → 2 (AS-5.2); meeting today → 3 (AS-5.3); a missed day resets to 0 (AS-5.4); each day compared with its own goal)
-- [ ] T085 [P] [US5] Extend `tests/services/sipRepo.test.ts` with `summaries(keys)`: days without rows return `{ consumedMl: 0, goalMl: profile goal }`; undone sips excluded
-- [ ] T086 [P] [US5] Component tests `tests/ui/WeekStrip.test.tsx` (7 items with statuses and PT-BR accessibility labels) and `tests/ui/StreakBadge.test.tsx` (hidden at 0; "🔥 1 dia"; "🔥 5 dias")
+- [X] T084 [P] [US5] Table tests in `tests/domain/history.test.ts` for `classifyDay` (0 → empty; 0 < x < goal → partial; ≥ goal → full; AS-5.1) and `computeStreak` (met yesterday and the day before, today not yet → 2 (AS-5.2); meeting today → 3 (AS-5.3); a missed day resets to 0 (AS-5.4); each day compared with its own goal)
+- [X] T085 [P] [US5] Extend `tests/services/sipRepo.test.ts` with `summaries(keys)`: days without rows return `{ consumedMl: 0, goalMl: profile goal }`; undone sips excluded
+- [X] T086 [P] [US5] Component tests `tests/ui/WeekStrip.test.tsx` (7 items with statuses and PT-BR accessibility labels) and `tests/ui/StreakBadge.test.tsx` (hidden at 0; "🔥 1 dia"; "🔥 5 dias")
 
 ### Implementation for User Story 5
 
-- [ ] T087 [P] [US5] Implement `classifyDay` and `computeStreak` in `src/domain/progress.ts` to pass T084
-- [ ] T088 [US5] Implement `summaries` in `src/services/db/sipRepo.ts` to pass T085; add `week` and `streak` to `getTodayState`/`src/state/store.ts`
-- [ ] T089 [P] [US5] Create `src/ui/components/WeekStrip.tsx` and `src/ui/components/StreakBadge.tsx` to pass T086; add both to Home
-- [ ] T090 [US5] Add a "Seed week" button to `src/app/dev/tools.tsx` that inserts 6 past days (met, met, partial, empty, met, partial) for validation, and change quickstart scenario 8 in `specs/001-hydration-reminder-app/quickstart.md` from `npm run seed:week` to "Dev tools › Seed week"
+- [X] T087 [P] [US5] Implement `classifyDay` and `computeStreak` in `src/domain/progress.ts` to pass T084
+- [X] T088 [US5] Implement `summaries` in `src/services/db/sipRepo.ts` to pass T085; add `week` and `streak` to `getTodayState`/`src/state/store.ts`
+- [X] T089 [P] [US5] Create `src/ui/components/WeekStrip.tsx` and `src/ui/components/StreakBadge.tsx` to pass T086; add both to Home
+- [X] T090 [US5] Add a "Seed week" button to `src/app/dev/tools.tsx` that inserts 6 past days (met, met, partial, empty, met, partial) for validation, and change quickstart scenario 8 in `specs/001-hydration-reminder-app/quickstart.md` from `npm run seed:week` to "Dev tools › Seed week"
 
 **Checkpoint**: All five user stories work independently.
 

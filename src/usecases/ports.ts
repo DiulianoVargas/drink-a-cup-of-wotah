@@ -17,7 +17,8 @@ export interface SipRepository {
   lastSipAt(dayKey: DayKey): number | null;
   goalFor(dayKey: DayKey): number | null;
   setDayGoal(dayKey: DayKey, goalMl: number): void;
-  summaries?(keys: DayKey[], fallbackGoalMl: number): DaySummary[];
+  /** Every recorded day (with its own goal), oldest first — for the week strip and the streak. */
+  allSummaries(): DaySummary[];
 }
 
 export interface ProfileRepository {

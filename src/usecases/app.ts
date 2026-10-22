@@ -1,5 +1,6 @@
 import { GLASS_ML } from '@/domain/constants';
 import { dayKeyFor } from '@/domain/day';
+import type { WeekDay } from '@/domain/history';
 import { assertValidProfile } from '@/domain/profile';
 import type { Profile, SipSource, TodayState } from '@/domain/types';
 import { getTodayState } from './getTodayState';
@@ -18,6 +19,10 @@ export type Published = {
   profile: Profile;
   today: TodayState;
   nextReminderAt: number | null;
+  /** Last 7 days for the Home strip (FR-028). */
+  week: WeekDay[];
+  /** Consecutive days with the goal met (FR-029). */
+  streak: number;
 };
 
 export interface StateSink {

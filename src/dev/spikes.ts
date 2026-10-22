@@ -59,3 +59,26 @@ export async function scheduleSpikeNotification() {
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 60 },
   });
 }
+
+/** Quickstart scenario 8: six past days (met, met, partial, empty, met, partial). */
+export function seedWeek(todayKey: string, goalMl: number) {
+  const db = getDb();
+  const pattern = [goalMl, goalMl, goalMl / 2, 0, goalMl, 750];
+  const [y, m, d] = todayKey.split('-').map(Number);
+  pattern.forEach((ml, i) => {
+    const date = new Date(y, m - 1, d - (6 - i));
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    db.run('INSERT OR REPLACE INTO day (day_key, goal_ml, updated_at) VALUES (?, ?, ?)', [
+      key,
+      goalMl,
+      Date.now(),
+    ]);
+    db.run('DELETE FROM sip WHERE day_key = ?', [key]);
+    for (let k = 0; k < ml / 250; k++) {
+      db.run(
+        'INSERT INTO sip (id, day_key, amount_ml, occurred_at, source, undone_at) VALUES (?, ?, 250, ?, ?, NULL)',
+        [`seed-${key}-${k}`, key, date.getTime() + k * 60_000, 'button'],
+      );
+    }
+  });
+}

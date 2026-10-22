@@ -1,10 +1,12 @@
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
-import { clearSpikeLog, scheduleSpikeNotification, spikeLog } from '@/dev/spikes';
+import { clearSpikeLog, scheduleSpikeNotification, seedWeek, spikeLog } from '@/dev/spikes';
 import { dbInfo } from '@/services/db/client';
 import { spikeActivity } from '@/widgets/SpikeActivity';
+import { useWotahStore } from '@/state/store';
 import { useTheme } from '@/ui/theme/useTheme';
+import { getApp } from '@/usecases/container';
 
 /** Dev-only screen to run spikes S1–S4 on the device (quickstart › Spikes). */
 export default function DevTools() {
@@ -46,6 +48,15 @@ export default function DevTools() {
         )}
       />
       <Button label="S3 · Caminho do banco" onPress={run('S3', dbInfo)} />
+      <Button
+        label="Seed week (quickstart 8)"
+        onPress={run('seed', async () => {
+          const { today, profile } = useWotahStore.getState();
+          if (!today || !profile) return 'no profile';
+          seedWeek(today.dayKey, profile.dailyGoalMl);
+          await getApp().reconcile();
+        })}
+      />
       <Button label="Atualizar log" onPress={run('log', () => undefined)} />
       <Button label="Limpar log" onPress={run('clear', clearSpikeLog)} />
       <Text selectable style={[styles.mono, { color: colors.ink }]}>

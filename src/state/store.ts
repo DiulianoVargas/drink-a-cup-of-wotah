@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { WeekDay } from '@/domain/history';
 import type { Profile, TodayState } from '@/domain/types';
 import type { Published, StateSink } from '@/usecases/app';
 
@@ -7,6 +8,8 @@ type WotahState = {
   profile: Profile | null;
   today: TodayState | null;
   nextReminderAt: number | null;
+  week: WeekDay[];
+  streak: number;
   /** Increments every time the "Desfazer" toast should (re)appear. */
   undoToastKey: number;
   /** Increments every time the day reaches its goal. */
@@ -21,6 +24,8 @@ export const useWotahStore = create<WotahState>(() => ({
   profile: null,
   today: null,
   nextReminderAt: null,
+  week: [],
+  streak: 0,
   undoToastKey: 0,
   celebrateKey: 0,
   permission: 'undetermined',
@@ -33,6 +38,8 @@ export const storeSink: StateSink = {
       profile: p.profile,
       today: p.today,
       nextReminderAt: p.nextReminderAt,
+      week: p.week,
+      streak: p.streak,
     });
   },
   requestUndoToast() {

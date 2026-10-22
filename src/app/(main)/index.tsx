@@ -16,7 +16,9 @@ import { NextReminderHint } from '@/ui/components/NextReminderHint';
 import { PlusButton } from '@/ui/components/PlusButton';
 import { ProgressCounter } from '@/ui/components/ProgressCounter';
 import { RemindersOffBanner } from '@/ui/components/RemindersOffBanner';
+import { StreakBadge } from '@/ui/components/StreakBadge';
 import { UndoToast } from '@/ui/components/UndoToast';
+import { WeekStrip } from '@/ui/components/WeekStrip';
 import { fonts, MAX_FONT_SCALE, typography } from '@/ui/theme/typography';
 import { useTheme } from '@/ui/theme/useTheme';
 import { getApp } from '@/usecases/container';
@@ -31,6 +33,8 @@ export default function Home() {
   const celebrateKey = useWotahStore((s) => s.celebrateKey);
   const permission = useWotahStore((s) => s.permission);
   const nextReminderAt = useWotahStore((s) => s.nextReminderAt);
+  const week = useWotahStore((s) => s.week);
+  const streak = useWotahStore((s) => s.streak);
 
   const [mascotBox, setMascotBox] = useState({ y: 0, height: 0 });
   const [plusY, setPlusY] = useState(0);
@@ -84,6 +88,7 @@ export default function Home() {
           </Text>
         </View>
         <View style={styles.headerActions}>
+          <StreakBadge days={streak} />
           {__DEV__ && (
             <Link href="/dev/tools" asChild>
               <Pressable
@@ -174,6 +179,12 @@ export default function Home() {
         />
       </View>
 
+      {week.length > 0 && (
+        <View style={styles.week}>
+          <WeekStrip days={week} />
+        </View>
+      )}
+
       <View style={styles.toastSlot} pointerEvents="box-none">
         <UndoToast showKey={undoToastKey} onUndo={() => getApp().undoLastSip()} />
       </View>
@@ -228,6 +239,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   reminderSlot: { marginTop: 12, minHeight: 24 },
-  plusArea: { marginTop: 16, marginBottom: 24, alignItems: 'center' },
+  plusArea: { marginTop: 16, marginBottom: 18, alignItems: 'center' },
+  week: { width: '100%', paddingHorizontal: 20, marginBottom: 8 },
   toastSlot: { position: 'absolute', left: 20, right: 20, bottom: 44 },
 });

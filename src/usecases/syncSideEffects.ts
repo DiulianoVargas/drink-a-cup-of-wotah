@@ -1,3 +1,4 @@
+import { computeStreak, weekView } from '@/domain/history';
 import type { Profile, TodayState } from '@/domain/types';
 import type { AppDeps } from './app';
 
@@ -21,7 +22,7 @@ export type Effect = (input: SyncInput, result: SyncResult) => Promise<void>;
  * run each effect, then publish the fresh state to the UI. One failing effect never blocks the rest.
  */
 export async function syncSideEffects(
-  deps: Pick<AppDeps, 'profiles' | 'clock' | 'sink'>,
+  deps: Pick<AppDeps, 'profiles' | 'clock' | 'sink' | 'sips'>,
   change: { today: TodayState; previous: TodayState | null },
   effects: Effect[],
 ): Promise<SyncResult> {
@@ -37,6 +38,13 @@ export async function syncSideEffects(
       console.warn('[sync] effect failed', e);
     }
   }
-  deps.sink.publish({ profile, today: change.today, nextReminderAt: result.nextReminderAt });
+  const days = deps.sips.allSummaries();
+  deps.sink.publish({
+    profile,
+    today: change.today,
+    nextReminderAt: result.nextReminderAt,
+    week: weekView(days, change.today.dayKey, profile.dailyGoalMl),
+    streak: computeStreak(days, change.today.dayKey),
+  });
   return result;
 }

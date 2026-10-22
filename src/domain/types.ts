@@ -63,6 +63,7 @@ export type SurfaceState = {
   /** Epoch ms, or null when reminders are off or not allowed. */
   nextReminderAt: number | null;
   celebrating: boolean;
-  pendingSips: number;
-  seq: number;
+  /** Pre-formatted "1,25" / "2" so the widget runtime only renders. */
+  consumedLabel: string;
+  goalLabel: string;
 };

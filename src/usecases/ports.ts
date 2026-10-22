@@ -39,10 +39,11 @@ export interface ReminderScheduler {
 }
 
 export interface LiveActivityPort {
-  ensureStarted(state: SurfaceState): Promise<void>;
+  isRunning(): boolean;
+  start(state: SurfaceState): void;
   update(state: SurfaceState): Promise<void>;
-  celebrateAndEnd(state: SurfaceState): Promise<void>;
-  readPending(): Promise<{ activityId: string; seq: number; pendingSips: number } | null>;
+  /** Shows `state` as the final content and removes the activity after `dismissAfterMs`. */
+  end(state: SurfaceState, dismissAfterMs: number): Promise<void>;
 }
 
 export interface Clock {

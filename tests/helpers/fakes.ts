@@ -47,25 +47,21 @@ export class FakeLiveActivity implements LiveActivityPort {
   running: { id: string; state: SurfaceState } | null = null;
   started = 0;
   updates: SurfaceState[] = [];
-  ended: SurfaceState[] = [];
-  async ensureStarted(state: SurfaceState) {
-    if (!this.running) {
-      this.started++;
-      this.running = { id: `la-${this.started}`, state };
-    }
+  ended: { state: SurfaceState; afterMs: number }[] = [];
+  isRunning() {
+    return this.running !== null;
+  }
+  start(state: SurfaceState) {
+    this.started++;
+    this.running = { id: `la-${this.started}`, state };
   }
   async update(state: SurfaceState) {
     this.updates.push(state);
     if (this.running) this.running.state = state;
   }
-  async celebrateAndEnd(state: SurfaceState) {
-    this.ended.push(state);
+  async end(state: SurfaceState, afterMs: number) {
+    this.ended.push({ state, afterMs });
     this.running = null;
-  }
-  async readPending() {
-    if (!this.running) return null;
-    const { seq, pendingSips } = this.running.state;
-    return { activityId: this.running.id, seq, pendingSips };
   }
 }
 

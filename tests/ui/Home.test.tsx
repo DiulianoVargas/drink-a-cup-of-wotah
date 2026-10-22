@@ -11,6 +11,8 @@ jest.mock('@/usecases/container', () => ({
 }));
 jest.mock('expo-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
+  useLocalSearchParams: () => ({}),
+  router: { setParams: jest.fn() },
 }));
 
 const metrics = {

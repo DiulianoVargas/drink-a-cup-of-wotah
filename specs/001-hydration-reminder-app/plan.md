@@ -49,7 +49,7 @@ Checked against `.specify/memory/constitution.md` v1.0.0.
 
 | Principle | Pre-Phase 0 | Post-Phase 1 | Evidence |
 |---|---|---|---|
-| I. Portable Domain Core | ✅ | ✅ | `src/domain` is pure with an injected clock; ports in [domain-api](./contracts/domain-api.md); single `syncSideEffects` gateway; one justified exception (inline thresholds in the widget runtime), see Complexity Tracking |
+| I. Portable Domain Core | ✅ | ✅ | `src/domain` is pure with an injected clock; ports in [domain-api](./contracts/domain-api.md); single `syncSideEffects` gateway; the Live Activity receives fully computed props (`toSurfaceState`) |
 | II. Local-First, Zero Data Collection | ✅ | ✅ | SQLite on device, local notifications, LA without push; no analytics/crash SDK in the dependency list |
 | III. Expo-First, Native by Exception | ✅ | ✅ | `expo-widgets` + CNG. The Swift module is conditional on spikes S1/S2 and listed in Complexity Tracking |
 | IV. Domain Test-First | ✅ | ✅ | Spec acceptance scenarios map to table tests (R12, data-model §4); manual device scenarios in quickstart |
@@ -157,5 +157,4 @@ See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
 
 | Potential violation | Why it may be needed | Simpler alternative rejected because |
 |---|---|---|
-| Expression/celebration thresholds repeated inline in `src/widgets/WotahDay.tsx` (Constitution I) | The `'widget'` runtime cannot import `src/domain`, but the button must update the face and celebration immediately with the app closed (FR-024/FR-025) | Leaving the props stale shows a wrong expression and no celebration; drift is prevented by a parity test against `toSurfaceState` (T073) |
 | Swift Expo Module `modules/wotah-native` (conditional, Constitution III) | FR-016/FR-023 require logging a sip without opening the app, exactly once. The `expo-widgets` runtime cannot reach storage or notifications, and iOS background actions may not run JS | "Reconcile on next run" is the accepted default. It is only insufficient if spikes S1/S2 show the pending sips cannot be recovered at all (i.e. they would be lost) |

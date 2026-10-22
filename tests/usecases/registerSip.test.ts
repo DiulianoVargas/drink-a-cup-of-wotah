@@ -47,6 +47,14 @@ describe('registerSip (FR-001, FR-007, FR-015)', () => {
     expect(deps.sink.toasts).toBe(2);
   });
 
+  it('a Live Activity tap that opens the app can ask for the toast too', async () => {
+    const deps = await createTestDeps({ now: at('2026-10-22', '10:00') });
+    const app = createApp(deps, []);
+    await app.registerSip('live_activity');
+    await app.registerSip('live_activity', { showUndoToast: true });
+    expect(deps.sink.toasts).toBe(1);
+  });
+
   it('does nothing without a profile', async () => {
     const deps = await createTestDeps({ now: at('2026-10-22', '10:00'), profile: null });
     const app = createApp(deps, []);

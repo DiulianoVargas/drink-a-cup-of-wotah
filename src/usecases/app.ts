@@ -79,7 +79,7 @@ export function createApp(deps: AppDeps, effects: Effect[]) {
      */
     async registerSip(
       source: SipSource,
-      opts: { eventKey?: string } = {},
+      opts: { eventKey?: string; showUndoToast?: boolean } = {},
     ): Promise<TodayState | null> {
       const profile = deps.profiles.get();
       if (!profile) return null;
@@ -102,7 +102,7 @@ export function createApp(deps: AppDeps, effects: Effect[]) {
 
       const today = getTodayState(deps)!;
       await sync(today);
-      if (TOAST_SOURCES.has(source)) deps.sink.requestUndoToast();
+      if (opts.showUndoToast ?? TOAST_SOURCES.has(source)) deps.sink.requestUndoToast();
       return today;
     },
 

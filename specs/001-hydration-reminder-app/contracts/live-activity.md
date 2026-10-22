@@ -35,42 +35,34 @@ directive runs in an isolated runtime and can only use `@expo/ui/swift-ui`.
 
 ## "Bebi 💧" button (iOS 17+)
 
-```ts
-// inside the 'widget' component
-<Button target="drink" onPress={() => {
-  const consumedMl = props.consumedMl + 250;
-  const p = consumedMl / props.goalMl;
-  return {
-    ...props,
-    consumedMl,
-    pendingSips: props.pendingSips + 1,
-    progress: p,
-    expression: p > 1 ? 'celebrating' : p >= 1 ? 'radiant' : p >= 0.25 ? 'excited' : 'thirsty',
-    celebrating: p >= 1,
-    seq: props.seq + 1,
-  };
-}}>Bebi 💧</Button>
+```tsx
+// inside the 'widget' component: no onPress — Live Activity buttons cannot run JS
+<Button label="Bebi 💧" target="wotah-drink" />
 ```
 
-- **Documented duplication (Constitution I exception)**: the widget runtime cannot import
-  `src/domain`, so the expression thresholds are repeated inline. A parity test
-  (`tests/widgets/WotahDay.parity.test.ts`) MUST assert that `onPress` produces the same
-  `expression`/`celebrating`/`progress` as `toSurfaceState` for 0..6000 ml and every allowed goal.
-- With the app terminated and the goal reached via this button, the activity shows the
-  celebrating state but cannot end itself; it ends on the next app run (`reconcile`).
-
-- Updates the activity on the device, even with the app terminated.
-- With the app alive: `addUserInteractionListener` (compare `event.source` with `instance.getId()`) → `reconcile()` imports `pendingSips`, logs the sips (`source: 'live_activity'`), resets `pendingSips` via `update()` and reschedules.
-- With the app terminated: the import happens on the next `reconcile()` (cold start/foreground) by reading the instance's current props. This caveat is accepted in the spec (Clarifications, FR-023, SC-005). **⚠️ Spike S2**: if the props cannot be read back, sips would be lost, and the native fallback (research R5) is adopted.
-- iOS < 17: no button. The activity is started with URL `wotah://home?sip=1`; tapping it opens the app, logs one sip (`source: 'live_activity'`) and shows the "Desfazer" toast (spec edge case, Constitution VI). After handling, Home replaces the route with `wotah://home` so a reload does not log again.
+- **How it works (verified in `expo-widgets` 57 source, research › Implementation findings)**: the
+  button runs `LiveActivityUserInteraction`, a `LiveActivityIntent` that only posts an in-process
+  event; `onPress` is never evaluated for Live Activities. `addUserInteractionListener`
+  (registered at module scope) → `handleLiveActivityInteraction` → `registerSip('live_activity',
+  { eventKey: 'la:<source>:<timestamp>' })` → the normal sync updates the activity, the app and the
+  reminders.
+- **App suspended** (common case): iOS resumes the process, the event reaches JS, everything updates
+  within 2 s. **App terminated**: the event is probably delivered before JS starts and is lost; the
+  activity does not change, so nothing wrong is shown (spike S2 measures this; reliable delivery needs
+  the Phase 9 native fallback).
+- Props are fully computed by `toSurfaceState` (domain), including `consumedLabel`/`goalLabel`; the
+  widget only renders, so no business rule is duplicated (Constitution I).
+- iOS < 17: no button. The activity is started with `Linking.createURL('/', { queryParams: { sip: '1' } })`
+  (`wotah:///?sip=1`); tapping it opens Home, which logs one sip (`live_activity`, with the
+  "Desfazer" toast) and clears the param (T082).
 
 ## Lifecycle
 
 | Trigger | Action |
 |---|---|
-| `AppState → active`, goal not met and `getInstances()` empty | `start(state, url)` with `wotah://home?sip=1` on iOS < 17 (no interactive button), `wotah://home` on iOS 17+ (FR-021) |
+| Any sync (boot, foreground, sip, settings) with the goal not met and no running activity | `start(state, url)` with `wotah:///?sip=1` on iOS < 17, `wotah:///` on iOS 17+ (FR-021, AS-4.7) |
 | Any sip/undo/goal change | `update(state)` (FR-024) |
-| Goal met | `update({ ...state, celebrating: true })` → `end('default', state, …)` with `after(now + 5 min)` (FR-025) |
+| Goal met | `end(after(now + 5 min), { ...state, celebrating: true })` — shows "Bom trabalho! 🎉" then goes away (FR-025) |
 | Undo drops below the goal after the activity ended | new activity only on the next app open |
 | Expired (8 h) | nothing; restarts on the next app open (FR-026) |
 | Goal reached via the button while the app was terminated | activity shows the celebrating state; `reconcile()` ends it on the next app run (FR-025) |

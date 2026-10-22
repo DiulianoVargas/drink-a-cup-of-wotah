@@ -36,6 +36,8 @@ const BOTTLE =
 const WAVE_BACK = 'M-100 0 q25 -9 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 V320 H-100 Z';
 const WAVE_FRONT = 'M-100 7 q25 -8 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 V320 H-100 Z';
 const SPARKLE = 'M0 -11 Q1 -1 11 0 Q1 1 0 11 Q-1 1 -11 0 Q-1 -1 0 -11Z';
+/** The glow (r=150 around 100,150) overflows the -30 -30 260 320 viewBox; it gets this much extra room. */
+const GLOW_PAD = 24;
 
 /** Water surface y for a 0..1 level (design: 278 − p × 214). */
 export const waterY = (level: number) => 278 - Math.min(Math.max(level, 0), 1) * 214;
@@ -71,6 +73,7 @@ export function Mascot({ level, expression, width, accessibilityLabel }: Props) 
   const scaleX = useSharedValue(1);
   const scaleY = useSharedValue(1);
   const previousLevel = useRef(level);
+  const party = useSharedValue(0);
 
   // Expression switches mid-jump when the level rises (design: "a expressão troca no meio do pulo").
   const [shownExpression, setShownExpression] = useState(expression);
@@ -131,6 +134,37 @@ export function Mascot({ level, expression, width, accessibilityLabel }: Props) 
     };
   }, [reduceMotion, backX, frontX]);
 
+  // Celebration loop: the glow breathes, confetti floats and sparkles twinkle (static with Reduce Motion).
+  const celebrating = shownExpression === 'celebrating';
+  useEffect(() => {
+    if (!celebrating || reduceMotion) {
+      cancelAnimation(party);
+      party.value = 0;
+      return;
+    }
+    party.value = withRepeat(
+      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+    return () => cancelAnimation(party);
+  }, [celebrating, reduceMotion, party]);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: 0.75 + party.value * 0.25,
+    transform: [{ scale: 0.94 + party.value * 0.1 }],
+  }));
+  const confettiStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: (party.value - 0.5) * 8 },
+      { rotate: `${(party.value - 0.5) * 6}deg` },
+    ],
+  }));
+  const sparkleStyle = useAnimatedStyle(() => ({
+    opacity: 1 - party.value * 0.55,
+    transform: [{ scale: 1 + party.value * 0.06 }],
+  }));
+
   const waterProps = useAnimatedProps(() => ({ transform: [{ translateY: water.value }] }));
   const backProps = useAnimatedProps(() => ({ transform: [{ translateX: backX.value }] }));
   const frontProps = useAnimatedProps(() => ({ transform: [{ translateX: frontX.value }] }));
@@ -142,6 +176,7 @@ export function Mascot({ level, expression, width, accessibilityLabel }: Props) 
   const shine = e === 'radiant' || e === 'celebrating';
   const cheekOpacity = e === 'thirsty' ? 0.35 : 0.85;
   const height = (width * 320) / 260;
+  const glowInset = -(GLOW_PAD * width) / 260;
 
   return (
     <View
@@ -152,74 +187,92 @@ export function Mascot({ level, expression, width, accessibilityLabel }: Props) 
     >
       {/* Celebration glow and confetti stay behind the jumping body. */}
       {e === 'celebrating' && (
-        <Svg style={StyleSheet.absoluteFill} viewBox="-30 -30 260 320">
-          <Defs>
-            <RadialGradient id={glowId}>
-              <Stop offset="0" stopColor={m.glow} stopOpacity={0.95} />
-              <Stop offset="0.6" stopColor={m.glow} stopOpacity={0.35} />
-              <Stop offset="1" stopColor={m.glow} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          <Circle cx={100} cy={150} r={150} fill={`url(#${glowId})`} />
-          <Rect
-            x={-14}
-            y={40}
-            width={13}
-            height={6}
-            rx={2}
-            fill={m.confettiPink}
-            transform="rotate(-30 -8 43)"
-          />
-          <Rect
-            x={206}
-            y={28}
-            width={13}
-            height={6}
-            rx={2}
-            fill={m.confettiMint}
-            transform="rotate(40 212 31)"
-          />
-          <Rect
-            x={-22}
-            y={150}
-            width={12}
-            height={6}
-            rx={2}
-            fill={m.confettiPeach}
-            transform="rotate(60 -16 153)"
-          />
-          <Rect
-            x={216}
-            y={132}
-            width={12}
-            height={6}
-            rx={2}
-            fill={m.confettiPink}
-            transform="rotate(-20 222 135)"
-          />
-          <Rect
-            x={-6}
-            y={256}
-            width={12}
-            height={6}
-            rx={2}
-            fill={m.confettiWater}
-            transform="rotate(25 0 259)"
-          />
-          <Rect
-            x={200}
-            y={250}
-            width={12}
-            height={6}
-            rx={2}
-            fill={m.confettiPeach}
-            transform="rotate(-50 206 253)"
-          />
-          <Circle cx={34} cy={-6} r={4.5} fill={m.confettiMint} />
-          <Circle cx={170} cy={-12} r={4} fill={m.confettiPink} />
-          <Circle cx={-20} cy={100} r={3.5} fill={m.confettiWater} />
-          <Circle cx={222} cy={200} r={4} fill={m.confettiMint} />
-        </Svg>
+        <Animated.View
+          style={[
+            styles.overflow,
+            { top: glowInset, bottom: glowInset, left: glowInset, right: glowInset },
+            glowStyle,
+          ]}
+        >
+          <Svg
+            width="100%"
+            height="100%"
+            viewBox={`${-30 - GLOW_PAD} ${-30 - GLOW_PAD} ${260 + 2 * GLOW_PAD} ${320 + 2 * GLOW_PAD}`}
+          >
+            <Defs>
+              <RadialGradient id={glowId}>
+                <Stop offset="0" stopColor={m.glow} stopOpacity={0.95} />
+                <Stop offset="0.6" stopColor={m.glow} stopOpacity={0.35} />
+                <Stop offset="1" stopColor={m.glow} stopOpacity={0} />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={100} cy={150} r={150} fill={`url(#${glowId})`} />
+          </Svg>
+        </Animated.View>
+      )}
+      {e === 'celebrating' && (
+        <Animated.View style={[StyleSheet.absoluteFill, confettiStyle]}>
+          <Svg width="100%" height="100%" viewBox="-30 -30 260 320">
+            <Rect
+              x={-14}
+              y={40}
+              width={13}
+              height={6}
+              rx={2}
+              fill={m.confettiPink}
+              transform="rotate(-30 -8 43)"
+            />
+            <Rect
+              x={206}
+              y={28}
+              width={13}
+              height={6}
+              rx={2}
+              fill={m.confettiMint}
+              transform="rotate(40 212 31)"
+            />
+            <Rect
+              x={-22}
+              y={150}
+              width={12}
+              height={6}
+              rx={2}
+              fill={m.confettiPeach}
+              transform="rotate(60 -16 153)"
+            />
+            <Rect
+              x={216}
+              y={132}
+              width={12}
+              height={6}
+              rx={2}
+              fill={m.confettiPink}
+              transform="rotate(-20 222 135)"
+            />
+            <Rect
+              x={-6}
+              y={256}
+              width={12}
+              height={6}
+              rx={2}
+              fill={m.confettiWater}
+              transform="rotate(25 0 259)"
+            />
+            <Rect
+              x={200}
+              y={250}
+              width={12}
+              height={6}
+              rx={2}
+              fill={m.confettiPeach}
+              transform="rotate(-50 206 253)"
+            />
+            <Circle cx={34} cy={-6} r={4.5} fill={m.confettiMint} />
+            <Circle cx={170} cy={-12} r={4} fill={m.confettiPink} />
+            <Circle cx={-20} cy={100} r={3.5} fill={m.confettiWater} />
+            <Circle cx={222} cy={200} r={4} fill={m.confettiMint} />
+          </Svg>
+        </Animated.View>
       )}
 
       {/* Body squashes and stretches from the feet (transform origin: bottom center). */}
@@ -306,13 +359,15 @@ export function Mascot({ level, expression, width, accessibilityLabel }: Props) 
       </Animated.View>
 
       {shine && (
-        <Svg style={StyleSheet.absoluteFill} viewBox="-30 -30 260 320">
-          <G stroke={m.outline} strokeWidth={2.5} strokeLinejoin="round">
-            <Path transform="translate(-6 92) scale(1.15)" d={SPARKLE} fill={m.cap} />
-            <Path transform="translate(208 78)" d={SPARKLE} fill={m.waterLight} />
-            <Path transform="translate(200 214) scale(.8)" d={SPARKLE} fill={m.confettiMint} />
-          </G>
-        </Svg>
+        <Animated.View style={[StyleSheet.absoluteFill, sparkleStyle]}>
+          <Svg width="100%" height="100%" viewBox="-30 -30 260 320">
+            <G stroke={m.outline} strokeWidth={2.5} strokeLinejoin="round">
+              <Path transform="translate(-6 92) scale(1.15)" d={SPARKLE} fill={m.cap} />
+              <Path transform="translate(208 78)" d={SPARKLE} fill={m.waterLight} />
+              <Path transform="translate(200 214) scale(.8)" d={SPARKLE} fill={m.confettiMint} />
+            </G>
+          </Svg>
+        </Animated.View>
       )}
     </View>
   );
@@ -438,4 +493,5 @@ function Face({ expression }: { expression: MascotExpression }) {
 
 const styles = StyleSheet.create({
   body: { transformOrigin: 'bottom' },
+  overflow: { position: 'absolute' },
 });

@@ -3,7 +3,7 @@ import type { Reminder } from '@/domain/types';
 import type { ReminderScheduler } from '@/usecases/ports';
 import type { SqlDb } from '../db/sqlDb';
 import { REMINDER_CATEGORY } from './categories';
-import { getPermission } from './permissions';
+import { ensureReminderChannel, getPermission, REMINDER_CHANNEL } from './permissions';
 
 export const reminderId = (r: Pick<Reminder, 'dayKey' | 'index'>) => `rem:${r.dayKey}:${r.index}`;
 
@@ -23,6 +23,7 @@ export function createNotificationScheduler(db: SqlDb): ReminderScheduler {
       await Notifications.cancelAllScheduledNotificationsAsync();
       clearRows();
       if ((await getPermission()) !== 'granted') return;
+      await ensureReminderChannel();
 
       for (const r of reminders) {
         const identifier = reminderId(r);
@@ -38,6 +39,7 @@ export function createNotificationScheduler(db: SqlDb): ReminderScheduler {
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: new Date(r.fireAt),
+            channelId: REMINDER_CHANNEL,
           },
         });
         db.run(

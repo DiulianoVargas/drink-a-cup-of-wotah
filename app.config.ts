@@ -20,6 +20,9 @@ const config: ExpoConfig = {
       ITSAppUsesNonExemptEncryption: false,
     },
   },
+  android: {
+    package: BUNDLE_ID,
+  },
   plugins: [
     'expo-router',
     'expo-sqlite',

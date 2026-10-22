@@ -33,7 +33,7 @@ describe('notification scheduler (contracts/notifications.md)', () => {
         sound: 'default',
         data: { kind: 'reminder', dayKey: '2026-10-22', index: 0 },
       },
-      trigger: { type: 'date', date: new Date(1_800_000_000_000) },
+      trigger: { type: 'date', date: new Date(1_800_000_000_000), channelId: 'reminders' },
     });
     const cancelOrder = N.cancelAllScheduledNotificationsAsync.mock.invocationCallOrder[0];
     const firstSchedule = N.scheduleNotificationAsync.mock.invocationCallOrder[0];

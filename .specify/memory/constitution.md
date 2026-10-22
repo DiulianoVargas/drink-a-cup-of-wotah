@@ -12,11 +12,9 @@ Sync Impact Report
 - Added sections: Technical Constraints; Development Workflow & Quality Gates; Governance
 - Removed sections: none
 - Templates: none modified (they read this file at runtime)
-- Follow-up:
-  - specs/001-hydration-reminder-app/* are written in PT-BR; Principle VI (language policy)
-    requires English docs → translate on next amendment of those artifacts.
-  - plan.md "Constitution Check" uses provisional gates G1–G6 → re-run /speckit-plan
-    (or edit the section) to map them to Principles I–VII.
+- Follow-up (resolved 2026-10-22):
+  - specs/001-hydration-reminder-app/* translated to English (Principle VI).
+  - plan.md Constitution Check now maps to Principles I–VII.
 -->
 
 # Wotah Constitution

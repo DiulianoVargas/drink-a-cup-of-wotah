@@ -1,4 +1,4 @@
-# Implementation Plan: Wotah — Lembrete de hidratação com garrafa-mascote
+# Implementation Plan: Wotah — Hydration reminder with a bottle mascot
 
 **Branch**: `001-hydration-reminder-app` | **Date**: 2026-10-22 | **Spec**: [spec.md](./spec.md)
 
@@ -6,46 +6,61 @@
 
 ## Summary
 
-App iOS de lembrete de hidratação com uma garrafa-mascote animada, construído em **Expo SDK 57** (sem Mac, builds no EAS) com **`expo-widgets`** para a Live Activity/Dynamic Island, **`expo-notifications`** para lembretes locais com a ação "Bebi 💧" e **`expo-sqlite`** para o histórico local. As regras de negócio (meta, dia lógico, cadeia de lembretes, expressão, sequência, formatação PT-BR) ficam num núcleo **TypeScript puro e determinístico** (`src/domain/`), atrás de ports, para que uma futura migração a Swift/SwiftUI seja só tradução. A UI segue `design/Wotah Sistema.html` como fonte de tokens e componentes e usa os demais HTMLs de `design/` como referência visual.
+An iOS hydration-reminder app with an animated bottle mascot. It is built with **Expo SDK 57** (no
+Mac, EAS cloud builds), **`expo-widgets`** for the Live Activity/Dynamic Island,
+**`expo-notifications`** for local reminders with the "Bebi 💧" action and **`expo-sqlite`** for
+local history. The business rules (goal, logical day, reminder chain, expression, streak, PT-BR
+formatting) live in a **pure, deterministic TypeScript core** (`src/domain/`) behind ports, so a
+future Swift/SwiftUI migration is translation only. The UI uses `design/Wotah Sistema.html` as the
+source of tokens and components, and the other `design/` HTMLs as visual reference.
 
-O principal risco técnico, documentado em [research.md](./research.md) R4/R5, é registrar goles **sem o app rodando**: a ação da notificação e o botão da Live Activity. A mitigação tem três partes: agendar a **cadeia inteira** de lembretes, reconciliar na abertura com idempotência, e manter um **Plano B nativo** isolado (Expo Module em Swift) que só entra se os spikes S1/S2 falharem.
+The main technical risk ([research.md](./research.md) R4/R5) is logging sips **while the app is
+not running** (the notification action and the Live Activity button). Following the user's
+decision, v1 stays Expo-only, with the caveat accepted in the spec. Three things keep sips from
+being lost: the **whole reminder chain** is scheduled ahead of time, the app **reconciles
+idempotently** on its next run, and an isolated **native fallback** (Swift Expo Module) is adopted
+only if spikes S1/S2 show sips would be lost.
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x/6.x (`strict`) sobre React Native 0.86 / React 19.2 (Expo SDK 57, patch ≥ 57.0.17). Swift só no Plano B opcional (`modules/wotah-native`).
+**Language/Version**: TypeScript (`strict`) on React Native 0.86 / React 19.2 (Expo SDK 57, patch ≥ 57.0.17). Swift only in the conditional fallback (`modules/wotah-native`).
 
-**Primary Dependencies**: `expo` 57, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` e `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`.
+**Primary Dependencies**: `expo` 57, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` and `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`.
 
-**Storage**: SQLite local (`expo-sqlite`) com o banco no App Group `group.<bundleId>` (pendente do spike S3). Schema em [data-model.md](./data-model.md#2-persistência-sqlite-srcservicesdb). Sem servidor (FR-031).
+**Storage**: local SQLite (`expo-sqlite`) with the database in the App Group `group.<bundleId>` (pending spike S3). Schema in [data-model.md](./data-model.md#2-persistence-sqlite-srcservicesdb). No server (FR-031).
 
-**Testing**: Jest + `jest-expo` (domínio e casos de uso com relógio injetado), `@testing-library/react-native` (componentes/telas), mocks de `expo-notifications`/`expo-widgets` para os planos de agendamento. Validação manual em aparelho conforme o [quickstart.md](./quickstart.md). Maestro via EAS Workflows é opcional.
+**Testing**: Jest + `jest-expo` (domain and use cases, test-first, with an injected clock), `@testing-library/react-native` (critical UI interactions), `expo-notifications`/`expo-widgets` mocks for scheduling plans. Manual on-device validation per [quickstart.md](./quickstart.md). Maestro via EAS Workflows is optional.
 
-**Target Platform**: iOS 16.4+ (mínimo do SDK). Live Activity com iOS 16.1+ na prática; botão interativo com iOS 17+. A Dynamic Island exige um modelo compatível. Android não é alvo da v1, mas o domínio e a UI são portáveis.
+**Target Platform**: iOS 16.4+ (SDK minimum). The interactive Live Activity button requires iOS 17+, and the Dynamic Island requires a compatible model. Android is not a v1 target, but the domain and UI stay portable.
 
-**Project Type**: mobile-app (um único app Expo com CNG; sem pasta `ios/` versionada).
+**Project Type**: mobile app (a single Expo app with CNG; no committed `ios/` folder).
 
-**Performance Goals**: animação do gole a 60 fps na UI thread (SC-006), < 1,5 s no total; app, LA e próximo lembrete consistentes em ≤ 2 s após um gole com o app vivo (SC-005); cold start até a Home < 2 s.
+**Performance Goals**: sip animation at 60 fps on the UI thread (SC-006) and < 1.5 s in total. App, LA and next reminder consistent within 2 s of a sip while the app is running, or within 2 s of the next run otherwise (SC-005). Cold start to Home < 2 s.
 
-**Constraints**: 100% offline (SC-008); sem conta; sem push; ≤ 48 notificações pendentes (limite do iOS: 64); Live Activity sujeita ao limite de 8 h e aos orçamentos de update do iOS; o runtime do widget é isolado (só `@expo/ui/swift-ui`, sem hooks, imports ou storage); somente PT-BR; claro e escuro; respeitar Reduzir movimento.
+**Constraints**: 100% offline (SC-008); no account; no push; ≤ 48 pending notifications (iOS limit: 64). The Live Activity is subject to the 8-hour limit and iOS update budgets. The widget runtime is isolated (`@expo/ui/swift-ui` only; no hooks, imports or storage). All UI text is PT-BR and all code and docs are English. Light and dark modes, Reduce Motion and Dynamic Type are supported. No analytics or telemetry.
 
-**Scale/Scope**: 1 usuário por aparelho; 5 telas (3 de onboarding + permissão, Home, Ajustes); 1 Live Activity; ~4 tabelas; histórico de 7 dias na UI.
+**Scale/Scope**: 1 user per device; 5 screens (3 onboarding steps + permission, Home, Settings); 1 Live Activity; 5 tables; 7-day history in the UI. The home-screen widget is deferred to v2.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-⚠️ `.specify/memory/constitution.md` ainda é o **template sem preenchimento**: não há princípios ratificados. Na falta deles, foram aplicados os gates abaixo, que derivam das restrições explícitas do usuário (`SPEC.md`) e de boas práticas. Recomendação: rodar `/speckit-constitution` para formalizá-los.
+Checked against `.specify/memory/constitution.md` v1.0.0.
 
-| Gate (provisório) | Origem | Pré-Phase 0 | Pós-Phase 1 |
+| Principle | Pre-Phase 0 | Post-Phase 1 | Evidence |
 |---|---|---|---|
-| G1. Regras de negócio isoladas da UI e da plataforma (portáveis para Swift) | `SPEC.md` › Stack | ✅ planejado | ✅ `src/domain` puro + ports ([domain-api](./contracts/domain-api.md)) |
-| G2. Sem servidor, sem conta, offline | FR-026, FR-031 | ✅ | ✅ SQLite local, notificações locais, LA sem push |
-| G3. Construível e testável sem Mac | spec › Assumptions | ✅ EAS + dev client | ✅ Jest no Windows; aparelho via EAS ([quickstart](./quickstart.md)) |
-| G4. Regras cobertas por testes antes da UI | boa prática | ✅ | ✅ casos de aceitação viram testes de tabela no domínio |
-| G5. Simplicidade: um app, sem dependências sem justificativa | boa prática | ✅ | ✅ cada dependência justificada em research; Plano B nativo só se um spike falhar |
-| G6. Visual fiel ao design system | pedido do usuário | ✅ | ✅ [design-tokens](./contracts/design-tokens.md) extraído de `Wotah Sistema.html` |
+| I. Portable Domain Core | ✅ | ✅ | `src/domain` is pure with an injected clock; ports in [domain-api](./contracts/domain-api.md); single `syncSideEffects` gateway |
+| II. Local-First, Zero Data Collection | ✅ | ✅ | SQLite on device, local notifications, LA without push; no analytics/crash SDK in the dependency list |
+| III. Expo-First, Native by Exception | ✅ | ✅ | `expo-widgets` + CNG. The Swift module is conditional on spikes S1/S2 and listed in Complexity Tracking |
+| IV. Domain Test-First | ✅ | ✅ | Spec acceptance scenarios map to table tests (R12, data-model §4); manual device scenarios in quickstart |
+| V. Design System Fidelity | ✅ | ✅ | [design-tokens](./contracts/design-tokens.md) extracted from `Wotah Sistema.html`; tokens only via `useTheme()` |
+| VI. Kind, Accessible PT-BR Experience | ✅ | ✅ | PT-BR strings verbatim from the design; no guilt copy; R14 accessibility; docs in English |
+| VII. Simplicity & Justified Dependencies | ✅ | ✅ | Every dependency justified in research; one app; widget deferred to v2 |
 
-Resultado: **PASS** (sem violações). Nada a registrar em Complexity Tracking. O Plano B nativo é condicional e está registrado abaixo como complexidade potencial.
+Technical Constraints: iOS minimum, EAS-only builds, stack baseline, the notification window and
+64-pending rules, and the performance targets are all reflected in Technical Context.
+
+Result: **PASS**. No unjustified violations.
 
 ## Project Structure
 
@@ -53,73 +68,93 @@ Resultado: **PASS** (sem violações). Nada a registrar em Complexity Tracking. 
 
 ```text
 specs/001-hydration-reminder-app/
-├── plan.md              # Este arquivo
-├── research.md          # Phase 0: decisões, riscos e spikes S1–S4
-├── data-model.md        # Phase 1: entidades, SQLite, dia lógico, plano de lembretes
-├── quickstart.md        # Phase 1: setup EAS + roteiro de validação
+├── plan.md              # This file
+├── research.md          # Phase 0: decisions, risks, spikes S1–S4
+├── data-model.md        # Phase 1: entities, SQLite, logical day, reminder planning
+├── quickstart.md        # Phase 1: EAS setup + validation script
 ├── contracts/
-│   ├── domain-api.md    # API pura do domínio + casos de uso/ports
-│   ├── notifications.md # categoria, ação, textos, idempotência
-│   ├── live-activity.md # regiões, props, botão, ciclo de vida
-│   └── design-tokens.md # tokens e componentes de Wotah Sistema.html
+│   ├── domain-api.md    # pure domain API + use cases/ports
+│   ├── notifications.md # category, action, texts, idempotency
+│   ├── live-activity.md # regions, props, button, lifecycle
+│   └── design-tokens.md # tokens and components from Wotah Sistema.html
 ├── checklists/
-└── tasks.md             # Phase 2 (/speckit-tasks; não criado aqui)
+│   └── requirements.md
+└── tasks.md             # Phase 2 (/speckit-tasks; not created here)
 ```
 
 ### Source Code (repository root)
 
 ```text
 app.config.ts             # bundleId, plugins: expo-widgets, expo-notifications, expo-font, expo-sqlite
-eas.json                  # perfis development / preview / production
+eas.json                  # development / preview / production profiles
 src/
 ├── app/                  # Expo Router
-│   ├── _layout.tsx       # fontes, tema, boot (registerCategories, response listener, reconcile)
+│   ├── _layout.tsx       # fonts, theme, boot (register categories, response listener, reconcile)
 │   ├── (onboarding)/     # weight.tsx, goal.tsx, schedule.tsx, permission.tsx
 │   └── (main)/           # index.tsx (Home), settings.tsx
-├── domain/               # TS puro: constants, goal, day, progress, reminders, messages, format, types
+├── domain/               # pure TS: constants, goal, day, progress, reminders, messages, format, types
 ├── usecases/             # registerSip, undoLastSip, updateProfile, completeOnboarding, reconcile, syncSideEffects
-├── services/             # adapters dos ports
-│   ├── db/               # client.ts (App Group path), migrations.ts, sipRepo.ts, profileRepo.ts
+├── services/             # port adapters
+│   ├── db/               # client.ts (App Group path), migrations.ts, sipRepo.ts, profileRepo.ts, eventLog.ts
 │   ├── notifications/    # scheduler.ts, responses.ts, categories.ts
 │   ├── liveActivity.ts
 │   └── haptics.ts
-├── state/store.ts        # Zustand (somente leitura derivada + toast)
+├── state/store.ts        # Zustand (derived read state + toast)
 ├── ui/
 │   ├── theme/            # tokens.ts, useTheme.ts, typography.ts
 │   └── components/       # Mascot, DropIcon, ProgressRing, PlusButton, UndoToast, WeekStrip, ...
 └── widgets/
-    └── WotahDay.tsx      # createLiveActivity (diretiva 'widget')
+    └── WotahDay.tsx      # createLiveActivity ('widget' directive)
 modules/
-└── wotah-native/         # (CONDICIONAL: Plano B) Expo Module Swift: LiveActivityIntent + delegate de notificação
+└── wotah-native/         # (CONDITIONAL fallback) Swift Expo Module: LiveActivityIntent + notification delegate
 tests/
-├── domain/               # testes de tabela por FR/AS
-├── usecases/             # com fakes dos ports e relógio fixo
+├── domain/               # table tests per FR/AS
+├── usecases/             # with port fakes and a fixed clock
 └── ui/                   # RNTL
-assets/                   # ícone (gota), splash, PNGs do mascote para a LA (se S4 exigir)
+assets/                   # icon (drop), splash, mascot PNGs for the LA (if S4 requires them)
 ```
 
-**Structure Decision**: um único app Expo (mobile-app) com CNG. As fronteiras são `domain` (puro) → `usecases` (orquestração via ports) → `services` (Expo/nativo) → `app`/`ui` (React). `modules/wotah-native` só é criado se os spikes S1/S2 falharem.
+**Structure Decision**: a single Expo app (mobile app) with CNG. The boundaries are `domain` (pure)
+→ `usecases` (orchestration via ports) → `services` (Expo/native) → `app`/`ui` (React).
+`modules/wotah-native` is created only if spike S1 or S2 shows sips would be lost.
 
-## Phase 0 — Research (concluída)
+## Phase 0 — Research (complete)
 
-Ver [research.md](./research.md). Nenhum `NEEDS CLARIFICATION` ficou aberto. Decisões: SDK 57 (R1), EAS + dev client + CNG (R2), domínio puro com ports (R3), cadeia de lembretes + reconciliação idempotente (R4), Live Activity Fase A/B (R5), SQLite no App Group (R6), Zustand (R7), Expo Router (R8), SVG + Reanimated para o mascote (R9), tokens do Sistema (R10), widget de tela de início fora da spec (R11), Jest/RNTL (R12), dia lógico (R13).
+See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
+- SDK 57 (R1)
+- EAS + dev client + CNG (R2)
+- pure domain with ports (R3)
+- reminder chain + idempotent reconciliation (R4)
+- Expo-only Live Activity with an accepted caveat and a conditional native fallback (R5)
+- SQLite in the App Group (R6)
+- Zustand (R7)
+- Expo Router (R8)
+- SVG + Reanimated mascot (R9)
+- tokens from Sistema (R10)
+- widget deferred to v2 (R11)
+- Jest/RNTL (R12)
+- logical day (R13)
+- accessibility (R14)
 
-## Phase 1 — Design (concluída)
+## Phase 1 — Design (complete)
 
-- [data-model.md](./data-model.md): entidades Profile, Sip, Day, Reminder (calculado), MascotExpression, SurfaceState; schema SQLite; regras de dia/janela; algoritmo da cadeia de lembretes; transições.
+- [data-model.md](./data-model.md): Profile, Sip, Day, Reminder (computed), MascotExpression, SurfaceState; SQLite schema; day/window rules; reminder chain algorithm; state transitions.
 - [contracts/](./contracts/): domain-api, notifications, live-activity, design-tokens.
-- [quickstart.md](./quickstart.md): setup sem Mac, spikes e roteiro manual por User Story.
+- [quickstart.md](./quickstart.md): Mac-free setup, spikes and a manual script per user story.
 
-**Ordem sugerida para o `/speckit-tasks`**: (0) scaffolding + EAS dev build + spikes S1–S4 → (1) domínio + testes → (2) DB + casos de uso → (3) tokens + Mascot + Home/US1 → (4) onboarding/US2 + Ajustes → (5) notificações/US3 → (6) Live Activity/US4 → (7) histórico/US5 → (8) polimento (escuro, Reduzir movimento, acessibilidade, ícone/splash).
-
-## Pontos para o usuário decidir
-
-1. **Widget da tela de início** (desenhado em `Wotah Widgets.html`) **não está na spec**. Para incluí-lo na v1, atualize a spec (nova User Story + FRs) antes do `/speckit-tasks`. A arquitetura (`SurfaceState`) já o comporta.
-2. **SC-005 com o app encerrado**: no modo Expo puro, um gole feito pela Live Activity com o app fechado só é refletido no banco e nos lembretes quando o app abrir. Vale aceitar essa ressalva na spec ou exigir o Plano B nativo desde já.
-3. **Constituição**: formalizar os gates G1–G6 com `/speckit-constitution`.
+**Suggested order for `/speckit-tasks`**:
+0. scaffolding + EAS dev build + spikes S1–S4
+1. domain, test-first
+2. DB + use cases
+3. tokens + Mascot + Home/US1
+4. onboarding/US2 + Settings
+5. notifications/US3
+6. Live Activity/US4
+7. history/US5
+8. polish: dark mode, Reduce Motion, accessibility, icon/splash
 
 ## Complexity Tracking
 
-| Possível violação | Por que pode ser necessária | Alternativa mais simples rejeitada porque |
+| Potential violation | Why it may be needed | Simpler alternative rejected because |
 |---|---|---|
-| Expo Module Swift `modules/wotah-native` (condicional) | FR-016/FR-023 exigem registrar o gole sem abrir o app; o runtime do `expo-widgets` não acessa storage nem notificações, e a ação em segundo plano no iOS pode não rodar JS | "Só reconciliar na abertura" deixa o histórico e os lembretes defasados até o usuário abrir o app; só é aceitável se o usuário aceitar a ressalva do ponto 2 |
+| Swift Expo Module `modules/wotah-native` (conditional, Constitution III) | FR-016/FR-023 require logging a sip without opening the app, exactly once. The `expo-widgets` runtime cannot reach storage or notifications, and iOS background actions may not run JS | "Reconcile on next run" is the accepted default. It is only insufficient if spikes S1/S2 show the pending sips cannot be recovered at all (i.e. they would be lost) |

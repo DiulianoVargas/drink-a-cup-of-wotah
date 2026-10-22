@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Wotah — Lembrete de hidratação com garrafa-mascote
+# Specification Quality Checklist: Wotah — Hydration reminder with a bottle mascot
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-22
@@ -31,6 +31,7 @@
 
 ## Notes
 
-- Stack decisions (Expo SDK 56+, expo-widgets, EAS Build) were intentionally kept out of the spec; they live in `SPEC.md` at the repo root and belong in `/speckit-plan`.
-- "Dynamic Island", "atividade ao vivo" and "notificação" are treated as user-facing product surfaces, not implementation details.
-- Defaults chosen without explicit user input (documented in Assumptions): tapping the notification body also logs a gulp; 30 min minimum reminder interval; mascot thresholds 25%/100%; weight 30–250 kg; goal 0.5–6 L; day starts at wake time.
+- Stack decisions (Expo SDK, expo-widgets, EAS Build) were intentionally kept out of the spec; they live in `SPEC.md` at the repo root and in `plan.md`/`research.md`.
+- "Dynamic Island", "live activity" and "notification" are treated as user-facing product surfaces, not implementation details.
+- Defaults chosen without explicit user input (documented in Assumptions): tapping the notification body also logs a sip; 30 min minimum reminder interval; mascot thresholds 25%/100%; weight 30–250 kg; goal 0.5–6 L; day starts at wake time.
+- 2026-10-22: translated to English (Constitution Principle VI). Clarifications added: home-screen widget deferred to v2; sips logged while the app is not running sync on the next app run (FR-015, FR-023, SC-005 and a new edge case updated). Checklist re-validated: all items still pass.

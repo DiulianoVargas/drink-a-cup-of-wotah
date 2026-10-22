@@ -1,81 +1,88 @@
 # Data Model — Wotah (001-hydration-reminder-app)
 
-**Data**: 2026-10-22 · Base: [spec.md › Key Entities](./spec.md#key-entities), [research.md](./research.md) (R3, R6, R13)
+**Date**: 2026-10-22 · Based on: [spec.md › Key Entities](./spec.md#key-entities), [research.md](./research.md) (R3, R6, R13)
 
-Unidades: volume em **ml inteiros**; horários do dia em **minutos desde 00:00** (`0..1439`); instantes em **epoch ms**. A formatação ("1,25 / 2 L", "14h30") acontece só na borda (`src/domain/format.ts`).
+Units: volume in **integer ml**; times of day in **minutes since 00:00** (`0..1439`); instants in
+**epoch ms**. Formatting ("1,25 / 2 L", "14h30") happens only at the edge (`src/domain/format.ts`).
 
 ---
 
-## 1. Entidades de domínio (TypeScript puro, `src/domain/types.ts`)
+## 1. Domain entities (pure TypeScript, `src/domain/types.ts`)
 
-### Profile (Perfil do usuário)
+### Profile
 
-| Campo | Tipo | Regras |
+| Field | Type | Rules |
 |---|---|---|
-| `weightKg` | `number` (inteiro) | 30 ≤ x ≤ 250 |
-| `dailyGoalMl` | `number` | múltiplo de 250; 500 ≤ x ≤ 6000 |
-| `wakeMinutes` | `number` | 0..1439; múltiplo de 30 na UI (seletores de 30 em 30 min) |
-| `sleepMinutes` | `number` | 0..1439; ≠ `wakeMinutes`. Se `sleep < wake`, a janela cruza a meia-noite |
-| `remindersEnabled` | `boolean` | padrão `true`; desligar cancela todos os lembretes |
-| `onboardingCompleted` | `boolean` | `false` até o fim do passo de permissão (aceita ou recusada) |
+| `weightKg` | `number` (integer) | 30 ≤ x ≤ 250 |
+| `dailyGoalMl` | `number` | multiple of 250; 500 ≤ x ≤ 6000 |
+| `wakeMinutes` | `number` | 0..1439; multiple of 30 in the UI (pickers in 30-minute steps) |
+| `sleepMinutes` | `number` | 0..1439; ≠ `wakeMinutes`. If `sleep < wake`, the window crosses midnight |
+| `remindersEnabled` | `boolean` | default `true`; turning it off cancels all reminders |
+| `onboardingCompleted` | `boolean` | `false` until the permission step ends (granted or declined) |
 
-Derivados:
-- `suggestedGoalMl(weightKg) = clamp(round(weightKg × 35 / 250) × 250, 500, 6000)` (FR-009). Ex.: 70 kg → 2.450 → **2.500**.
+Derived:
+- `suggestedGoalMl(weightKg) = clamp(round(weightKg × 35 / 250) × 250, 500, 6000)` (FR-009). Example: 70 kg → 2,450 → **2,500**.
 - `awakeDurationMinutes = (sleep − wake + 1440) % 1440`.
 
-### Sip (Gole)
+### Sip
 
-| Campo | Tipo | Regras |
+| Field | Type | Rules |
 |---|---|---|
-| `id` | `string` (UUID) | gerado no registro |
-| `amountMl` | `250` | constante `GLASS_ML` (FR-001) |
-| `occurredAt` | `number` (epoch ms) | instante do registro |
-| `dayKey` | `string` `YYYY-MM-DD` | data local do início do dia lógico (ver §3) |
-| `source` | `'button' \| 'notification_action' \| 'notification_tap' \| 'live_activity' \| 'widget'` | origem (spec › Gole) |
-| `undoneAt` | `number \| null` | soft-delete do "Desfazer" (FR-003) |
+| `id` | `string` (UUID) | generated when logged |
+| `amountMl` | `250` | constant `GLASS_ML` (FR-001) |
+| `occurredAt` | `number` (epoch ms) | instant of logging |
+| `dayKey` | `string` `YYYY-MM-DD` | local date of the start of the logical day (see §3) |
+| `source` | `'button' \| 'notification_action' \| 'notification_tap' \| 'live_activity'` | origin (spec › Sip) |
+| `undoneAt` | `number \| null` | soft delete for "Desfazer" (FR-003) |
 
-### Day (Dia)
+### Day
 
-Derivado do log de goles + snapshot de meta. A meta do dia é fixada no primeiro evento do dia e atualizada se o usuário mudar a meta naquele dia (FR-028 compara com "a meta vigente naquele dia").
+Derived from the sip log plus a goal snapshot. The day's goal is fixed at the first event of the
+day and updated if the user changes the goal that day (FR-028 compares with "the goal in force
+that day").
 
-| Campo | Tipo | Regras |
+| Field | Type | Rules |
 |---|---|---|
 | `dayKey` | `string` | PK |
-| `goalMl` | `number` | meta vigente no dia (última alteração vale) |
-| `consumedMl` | `number` | Σ `amountMl` dos goles do dia com `undoneAt = null` (derivado; pode ser cacheado) |
-| `goalMet` | `boolean` | `consumedMl ≥ goalMl` (derivado) |
+| `goalMl` | `number` | goal in force that day (the last change wins) |
+| `consumedMl` | `number` | Σ `amountMl` of the day's sips with `undoneAt = null` (derived; may be cached) |
+| `goalMet` | `boolean` | `consumedMl ≥ goalMl` (derived) |
 
-Classificação de histórico (FR-028): `empty` se `consumedMl = 0`; `full` se `consumedMl ≥ goalMl`; senão `partial`.
+History classification (FR-028): `empty` if `consumedMl = 0`; `full` if `consumedMl ≥ goalMl`;
+otherwise `partial`.
 
-### Reminder (Lembrete)
+### Reminder
 
-Não é persistido como entidade de negócio. É **calculado** pelo domínio (`planReminders`) e materializado como notificações agendadas. Os IDs das notificações agendadas ficam em `scheduled_reminders` só para conferência e cancelamento.
+Not persisted as a business entity. It is **computed** by the domain (`planReminders`) and
+materialized as scheduled notifications. Scheduled notification IDs are kept in
+`scheduled_reminder` only for inspection and cancellation.
 
-| Campo | Tipo |
+| Field | Type |
 |---|---|
 | `fireAt` | `number` (epoch ms) |
 | `dayKey` | `string` |
-| `remainingGlasses` | `number` (para o texto "Faltam {n} copos") |
-| `messageIndex` | `number` (variação de texto, FR-020) |
+| `remainingGlasses` | `number` (for the "Faltam {n} copos" text) |
+| `messageIndex` | `number` (text variant, FR-020) |
 
 ### MascotExpression
 
-`'sedenta' | 'animada' | 'radiante' | 'comemorando'` (FR-006):
+`'thirsty' | 'excited' | 'radiant' | 'celebrating'` (FR-006; PT-BR design names: sedenta, animada,
+radiante, comemorando):
 
-| Progresso `p = consumed / goal` | Expressão |
+| Progress `p = consumed / goal` | Expression |
 |---|---|
-| `p < 0.25` | `sedenta` |
-| `0.25 ≤ p < 1` | `animada` |
-| `p = 1` (consumo exatamente igual à meta) | `radiante` |
-| `p > 1` | `comemorando` |
+| `p < 0.25` | `thirsty` |
+| `0.25 ≤ p < 1` | `excited` |
+| `p = 1` (consumption exactly equals the goal) | `radiant` |
+| `p > 1` | `celebrating` |
 
-Nível visual da água: `min(p, 1)`.
+Visual water level: `min(p, 1)`.
 
 ---
 
-## 2. Persistência (SQLite, `src/services/db/`)
+## 2. Persistence (SQLite, `src/services/db/`)
 
-Banco `wotah.db` no container do App Group (R6). Migrations com `PRAGMA user_version`.
+Database `wotah.db` in the App Group container (R6). Migrations via `PRAGMA user_version`.
 
 ```sql
 -- v1
@@ -106,9 +113,9 @@ CREATE TABLE sip (
 );
 CREATE INDEX sip_day ON sip(day_key, occurred_at);
 
--- idempotência de respostas de notificação / props da Live Activity (R4, R5)
+-- idempotency for notification responses / Live Activity props (R4, R5)
 CREATE TABLE processed_event (
-  event_key     TEXT PRIMARY KEY,          -- ex.: 'notif:<requestId>:<actionId>' | 'la:<activityId>:<seq>'
+  event_key     TEXT PRIMARY KEY,          -- e.g. 'notif:<requestId>:<actionId>' | 'la:<activityId>:<seq>'
   processed_at  INTEGER NOT NULL
 );
 
@@ -119,79 +126,82 @@ CREATE TABLE scheduled_reminder (
 );
 ```
 
-Consultas-chave:
-- **Total do dia**: `SELECT COALESCE(SUM(amount_ml),0) FROM sip WHERE day_key=? AND undone_at IS NULL`.
-- **Desfazer último gole** (FR-003): `UPDATE sip SET undone_at=? WHERE id = (SELECT id FROM sip WHERE day_key=? AND undone_at IS NULL ORDER BY occurred_at DESC LIMIT 1)`. Sem efeito se não houver.
-- **Últimos 7 dias**: `day LEFT JOIN` agregados de `sip`, para os 7 `dayKey`s gerados pelo domínio. Dias sem linha contam como `empty`.
-- **Sequência** (FR-029): calculada no domínio sobre a lista de dias ordenada (`computeStreak(days, todayKey)`).
+Key queries:
+- **Day total**: `SELECT COALESCE(SUM(amount_ml),0) FROM sip WHERE day_key=? AND undone_at IS NULL`.
+- **Undo last sip** (FR-003): `UPDATE sip SET undone_at=? WHERE id = (SELECT id FROM sip WHERE day_key=? AND undone_at IS NULL ORDER BY occurred_at DESC LIMIT 1)`. No effect if there is none.
+- **Last 7 days**: `day LEFT JOIN` aggregates from `sip`, for the 7 `dayKey`s generated by the domain. Days without a row count as `empty`.
+- **Streak** (FR-029): computed in the domain over the ordered day list (`computeStreak(days, todayKey)`).
 
-Retenção: manter tudo (o volume é minúsculo). A UI só lê 7 dias.
+Retention: keep everything (the volume is tiny). The UI only reads 7 days.
 
 ---
 
-## 3. Dia lógico e janela (regras de `src/domain/day.ts`)
+## 3. Logical day and window (rules in `src/domain/day.ts`)
 
-- `dayKeyFor(now, wake)`: se `minutesOf(now) ≥ wake`, o dia é a data local de `now`; senão, a data local de `now − 1 dia` (FR-030 e o edge case "virada do dia": goles entre dormir e acordar contam para o dia anterior).
-- `windowFor(dayKey, wake, sleep)`: `start = dayKey@wake`; `end = start + awakeDuration`. Isso cobre o caso em que a janela cruza a meia-noite (ex.: 10h → 1h).
+- `dayKeyFor(now, wake)`: if `minutesOf(now) ≥ wake`, the day is the local date of `now`; otherwise it is the local date of `now − 1 day` (FR-030 and the "day rollover" edge case: sips between bedtime and wake time count toward the previous day).
+- `windowFor(dayKey, wake, sleep)`: `start = dayKey@wake`; `end = start + awakeDuration`. This covers windows that cross midnight (e.g., 10:00 → 1:00).
 - `isInsideWindow(now)`: `start ≤ now < end`.
 
 ---
 
-## 4. Planejamento de lembretes (`src/domain/reminders.ts`)
+## 4. Reminder planning (`src/domain/reminders.ts`)
 
-Entrada: `profile`, `consumedMl` de hoje, `now`, `lastSipAt?`. Saída: `Reminder[]` (hoje + próxima janela).
+Input: `profile`, today's `consumedMl`, `now`, `lastSipAt?`. Output: `Reminder[]` (today + next window).
 
 ```
 remainingGlasses = ceil(max(goal − consumed, 0) / 250)
-se !remindersEnabled ou remainingGlasses = 0  → hoje: []           (FR-018, SC-003)
-anchor  = max(now, window.start)                                     (início tardio / fora da janela)
-interval = max( (window.end − anchor) / remainingGlasses , 30 min )  (FR-014)
-first   = (lastSipAt ≥ window.start ? lastSipAt : anchor) + interval (FR-015)
-chain: first, first+interval, …  enquanto t < window.end e k ≤ remainingGlasses   (FR-013, SC-004)
-próxima janela: mesma fórmula com consumed = 0, anchor = nextWindow.start
+if !remindersEnabled or remainingGlasses = 0  → today: []          (FR-018, SC-003)
+anchor   = max(now, window.start)                                   (late start / outside window)
+interval = max( (window.end − anchor) / remainingGlasses , 30 min ) (FR-014)
+first    = (lastSipAt ≥ window.start ? lastSipAt : anchor) + interval (FR-015)
+chain: first, first+interval, …  while t < window.end and k ≤ remainingGlasses   (FR-013, SC-004)
+next window: same formula with consumed = 0, anchor = nextWindow.start
 ```
 
-Casos da spec que viram testes de tabela: AS-3.1 (2 L, 8h–22h → ~1h45), AS-3.4 (gole às 10h reagenda), AS-3.5/3.7 (meta batida/desfazer), edge cases de janela curta (piso de 30 min), início tardio, último lembrete antes de dormir e janela que cruza a meia-noite.
+Spec cases that become table tests: AS-3.1 (2 L, 8:00–22:00 → ~1h45), AS-3.4 (a sip at 10:00
+reschedules), AS-3.5/3.7 (goal met/undo), plus the edge cases for a short window (30-minute floor),
+late start, last reminder before bedtime and a window crossing midnight.
 
-Texto (FR-020): `pickMessage(remainingGlasses, consumedMl, seed)` sorteia entre as 8 variações do design (`contracts/notifications.md`). "Falta pouquinho!" só aparece quando `remainingGlasses = 1`.
+Text (FR-020): `pickMessage(remainingGlasses, consumedMl, seed)` picks among the design's 8
+variants (`contracts/notifications.md`). "Falta pouquinho!" only appears when `remainingGlasses = 1`.
 
 ---
 
-## 5. Transições de estado
+## 5. State transitions
 
 ```
-Onboarding:  peso → meta → horários → permissão → (onboardingCompleted = true) → Home
+Onboarding:  weight → goal → schedule → permission → (onboardingCompleted = true) → Home
 
-Dia (por dayKey):
-  vazio (0 ml) ──registerSip──▶ parcial ──registerSip (≥ meta)──▶ meta batida ──registerSip──▶ acima da meta
-       ▲               │  ▲                     │                                     │
-       └──undo─────────┘  └────undo (< meta)────┘◀────────────undo (= meta)──────────┘
+Day (per dayKey):
+  empty (0 ml) ──registerSip──▶ partial ──registerSip (≥ goal)──▶ goal met ──registerSip──▶ above goal
+       ▲              │  ▲                     │                                    │
+       └──undo────────┘  └────undo (< goal)────┘◀────────────undo (= goal)─────────┘
 
-Efeitos por transição (syncSideEffects):
-  qualquer gole/undo/mudança de perfil → replanejar lembretes; atualizar a Live Activity
-  cruzou para meta batida → cancelar os lembretes de hoje; celebrar; LA: "Bom trabalho! 🎉" → end após ~5 min
-  saiu de meta batida (undo) → reagendar se ainda houver janela (FR-019)
+Effects per transition (syncSideEffects):
+  any sip/undo/profile change → replan reminders; update the Live Activity
+  crossed into goal met → cancel today's reminders; celebrate; LA: "Bom trabalho! 🎉" → end after ~5 min
+  left goal met (undo) → reschedule if window time remains (FR-019)
 
-Live Activity:  inexistente ──app abre e meta não batida──▶ ativa ──update──▶ ativa
-                 ativa ──meta batida──▶ celebrando ──~5 min──▶ encerrada
-                 ativa ──8 h (iOS)──▶ encerrada ──app abre e meta não batida──▶ ativa
+Live Activity:  none ──app opens and goal not met──▶ active ──update──▶ active
+                active ──goal met──▶ celebrating ──~5 min──▶ ended
+                active ──8 h (iOS)──▶ ended ──app opens and goal not met──▶ active
 ```
 
 ---
 
-## 6. Snapshot para superfícies do sistema (`SurfaceState`)
+## 6. Snapshot for system surfaces (`SurfaceState`)
 
-Props enviados à Live Activity (e ao widget, se entrar no escopo). JSON simples, sem `Date`:
+Props sent to the Live Activity (and, in v2, to the home-screen widget). Plain JSON, no `Date`:
 
-| Campo | Tipo | Uso |
+| Field | Type | Use |
 |---|---|---|
 | `consumedMl` | `number` | "1,25" |
 | `goalMl` | `number` | "/ 2 L" |
-| `progress` | `number` 0..∞ | barra/anel |
-| `expression` | `MascotExpression` | gota/garrafa |
+| `progress` | `number` 0..∞ | bar/ring |
+| `expression` | `MascotExpression` | drop/bottle |
 | `nextReminderAt` | `number \| null` | "Próximo lembrete em 45 min" |
 | `celebrating` | `boolean` | "Bom trabalho! 🎉" |
-| `pendingSips` | `number` | goles feitos na própria atividade, ainda não importados pelo app (R5 Fase A) |
-| `seq` | `number` | contador monotônico usado na idempotência (`processed_event`) |
+| `pendingSips` | `number` | sips made on the activity itself, not yet imported by the app (R5) |
+| `seq` | `number` | monotonic counter used for idempotency (`processed_event`) |
 
-Detalhes e mapeamento por região em [contracts/live-activity.md](./contracts/live-activity.md).
+Details and per-region mapping in [contracts/live-activity.md](./contracts/live-activity.md).

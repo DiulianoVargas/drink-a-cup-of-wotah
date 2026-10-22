@@ -1,56 +1,61 @@
-# Quickstart — validação do Wotah
+# Quickstart — validating Wotah
 
-Guia para subir o ambiente e provar, de ponta a ponta, que a feature funciona. Detalhes de regras: [data-model.md](./data-model.md); interfaces: [contracts/](./contracts/).
+How to set up the environment and prove, end to end, that the feature works. Rules:
+[data-model.md](./data-model.md); interfaces: [contracts/](./contracts/).
 
-## Pré-requisitos
+## Prerequisites
 
-- Windows com Node.js LTS (≥ 20), Git e `npm`.
-- Conta Expo (`npx eas-cli login`) e **Apple Developer paga** vinculada ao EAS.
-- iPhone com iOS 17+ (Dynamic Island para a US4; iOS 16.4–16.x valida só US1–3 e US5) na mesma rede Wi-Fi do PC (ou use `--tunnel`).
+- Windows with Node.js LTS (≥ 20), Git and `npm`.
+- Expo account (`npx eas-cli login`) and a **paid Apple Developer** account linked to EAS.
+- iPhone with iOS 17+ (Dynamic Island for US4; iOS 16.4–16.x validates only US1–3 and US5) on the same Wi-Fi as the PC (or use `--tunnel`).
 
 ## Setup
 
 ```bash
 npm install
-npx expo-doctor                     # deve passar sem erros
-npx eas-cli device:create           # registra o iPhone (uma vez)
-npx eas-cli build -p ios --profile development   # dev client na nuvem (~15–25 min)
-# instale o build pelo link/QR do EAS (ou TestFlight)
-npx expo start --dev-client         # Metro no Windows; abra o app no iPhone
+npx expo-doctor                     # must pass with no errors
+npx eas-cli device:create           # register the iPhone (once)
+npx eas-cli build -p ios --profile development   # cloud dev client (~15–25 min)
+# install the build from the EAS link/QR (or TestFlight)
+npx expo start --dev-client         # Metro on Windows; open the app on the iPhone
 ```
 
-Rebuild nativo (`eas build`) **só** quando mudar dependência nativa, `app.config.ts` ou config plugin. Mudanças de JS recarregam pelo Metro.
+Native rebuild (`eas build`) **only** when a native dependency, `app.config.ts` or a config plugin
+changes. JS changes reload through Metro.
 
-## Validação automatizada (Windows)
+## Automated validation (Windows)
 
 ```bash
 npm run typecheck     # tsc --noEmit
 npm run lint
-npm test              # Jest: domínio (tabelas da spec) + componentes + plano de agendamento
+npm test              # Jest: domain (spec tables) + use cases + components + scheduling plan
 ```
 
-Esperado: todos os casos de aceitação numéricos da spec passam no domínio (AS-2.1, AS-3.1, AS-3.4–3.7, AS-5.1–5.4 e os edge cases de janela, virada de dia, piso de 30 min e faixas de peso/meta).
+Expected: every numeric acceptance scenario in the spec passes in the domain (AS-2.1, AS-3.1,
+AS-3.4–3.7, AS-5.1–5.4, plus the window, day rollover, 30-minute floor and weight/goal range
+edge cases).
 
-## Spikes (rodar antes de construir US3/US4; ver research › Spikes)
+## Spikes (run before building US3/US4; see research › Required spikes)
 
-| ID | Passos | Resultado esperado |
+| ID | Steps | Expected result |
 |---|---|---|
-| S1 | Agendar uma notificação de teste para daqui a 1 min → encerrar o app (swipe up) → tocar "Bebi 💧" → abrir o app | total +250 ml, sem duplicar |
-| S2 | Abrir o app (LA inicia) → encerrar o app → expandir a ilha → "Bebi 💧" ×2 → abrir o app | LA mostrou +500 na hora; o app importa 2 goles na abertura |
-| S3 | Log do caminho do `wotah.db` | dentro de `.../Shared/AppGroup/<id>/` |
-| S4 | LA com Fredoka e PNG da gota | renderiza ou cai no fallback SF Rounded |
+| S1 | Schedule a test notification 1 min out → terminate the app (swipe up) → tap "Bebi 💧" → open the app | total +250 ml, no duplicate |
+| S2 | Open the app (LA starts) → terminate the app → expand the island → "Bebi 💧" ×2 → open the app | the LA showed +500 immediately; the app imports exactly 2 sips on open |
+| S3 | Log the `wotah.db` path | inside `.../Shared/AppGroup/<id>/` |
+| S4 | LA with Fredoka and a drop PNG | renders, or falls back to SF Rounded |
 
-Registre o resultado de cada spike em `research.md` (Decisão final).
+Record each spike's outcome in `research.md` (final decision).
 
-## Cenários manuais no iPhone
+## Manual scenarios on the iPhone
 
-1. **Onboarding (US2, SC-001)**: instalação limpa → 70 kg → sugere **2,5 L** → − deixa 2,25 → 8h / 22h → "Permitir lembretes" → Home em < 1 min.
-2. **Registro e desfazer (US1)**: "+" ×2 → "0,5 / 2 L", garrafa sobe com mola e o mascote fica "animada" ao cruzar 25% → "Desfazer" no toast → volta a 0,25 → segurar "+" 0,45 s → "Desfazer último gole" → 0 → desfazer indisponível.
-3. **Lembretes (US3)**: nos Ajustes, janela = agora → agora+2h, meta 1 L. Espere: lembretes a cada ~30 min (2 h ÷ 4 copos). Toque "Bebi 💧" na notificação sem abrir o app → abra o app: total +250 e "Próximo lembrete" recalculado. Bata a meta → "Bom trabalho! 🎉" e **nenhuma** notificação até o próximo horário de acordar (SC-003). Desfaça um gole → lembretes voltam.
-4. **Toque no corpo (FR-017)**: o app abre com +250 ml e o toast "Desfazer".
-5. **Fora da janela (SC-004)**: janela já encerrada hoje → nenhum lembrete até amanhã no horário de acordar.
-6. **Live Activity (US4)**: abrir o app → ilha compacta "gota + 0,25 / 2 L" → long-press expande → "Bebi 💧" → ilha, app e "próximo lembrete" consistentes em ≤ 2 s com o app vivo (SC-005) → bater a meta → "Bom trabalho! 🎉" e a atividade some em ~5 min.
-7. **Histórico (US5)**: com seed de dev (`npm run seed:week`, só em dev), a faixa mostra cheio/parcial/vazio e "🔥 2 dias"; bater a meta hoje → "🔥 3 dias".
-8. **Notificações negadas**: recusar no onboarding → a Home mostra o aviso discreto; o "+" funciona normalmente.
-9. **Modo escuro e Reduzir movimento**: alternar nos Ajustes do iOS → cores do tema escuro do `design-tokens.md`; com Reduzir movimento, sem pulo e sem confete.
-10. **Offline (SC-008)**: modo avião → todos os cenários 2, 3 e 7 funcionam.
+1. **Onboarding (US2, SC-001)**: clean install → 70 kg → suggests **2,5 L** → "−" gives 2,25 → 8:00 / 22:00 → "Permitir lembretes" → Home in < 1 min.
+2. **Logging and undo (US1)**: "+" ×2 → "0,5 / 2 L"; the bottle rises with a spring and the mascot turns "excited" when crossing 25% → "Desfazer" on the toast → back to 0,25 → long-press "+" 0.45 s → "Desfazer último gole" → 0 → undo unavailable.
+3. **Reminders (US3)**: in Settings, window = now → now + 2 h, goal 1 L. Expect reminders every ~30 min (2 h ÷ 4 glasses). Tap "Bebi 💧" on the notification without opening the app → open the app: total +250 and "Próximo lembrete" recomputed. Meet the goal → "Bom trabalho! 🎉" and **no** notification until the next wake time (SC-003). Undo a sip → reminders return.
+4. **Body tap (FR-017)**: the app opens with +250 ml and the "Desfazer" toast.
+5. **Outside the window (SC-004)**: window already over for today → no reminder until tomorrow at wake time.
+6. **Live Activity (US4)**: open the app → compact island "drop + 0,25 / 2 L" → long-press to expand → "Bebi 💧" → island, app and "next reminder" consistent in ≤ 2 s with the app alive (SC-005) → meet the goal → "Bom trabalho! 🎉" and the activity disappears in ~5 min.
+7. **Live Activity with the app terminated (SC-005 caveat)**: terminate the app → "Bebi 💧" on the lock screen → the activity updates immediately → open the app → the total matches within 2 s, with no sip lost or duplicated.
+8. **History (US5)**: with the dev seed (`npm run seed:week`, dev only), the strip shows full/partial/empty and "🔥 2 dias"; meeting today's goal → "🔥 3 dias".
+9. **Notifications denied**: decline during onboarding → Home shows the discreet notice; "+" works normally.
+10. **Dark mode, Reduce Motion and accessibility**: toggle in iOS Settings → dark theme colors from `design-tokens.md`; with Reduce Motion there is no jump or confetti; VoiceOver reads PT-BR labels on every control; layouts hold at the largest non-accessibility Dynamic Type size.
+11. **Offline (SC-008)**: airplane mode → scenarios 2, 3 and 8 all work.

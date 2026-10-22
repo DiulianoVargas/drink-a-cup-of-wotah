@@ -1,4 +1,4 @@
-# Feature Specification: Wotah — Lembrete de hidratação com garrafa-mascote
+# Feature Specification: Wotah — Hydration reminder with a bottle mascot
 
 **Feature Branch**: `001-hydration-reminder-app`
 
@@ -6,201 +6,212 @@
 
 **Status**: Draft
 
-**Input**: User description: "App iOS (Expo, foco iOS) de lembrete de hidratação "Wotah" com garrafa-mascote animada. Usar todas as decisões já tomadas em SPEC.md na raiz do projeto: copo fixo de 250 ml + botão "+" e desfazer último gole; meta sugerida por peso (35 ml/kg, múltiplos de 250 ml, editável); lembretes calculados pela janela acordar/dormir ÷ copos restantes, reagendados a cada gole, nenhum fora da janela; notificação com ação "Bebi 💧" que registra sem abrir o app; ao bater a meta para de notificar no dia e mostra "Bom trabalho! 🎉", contando acima da meta; Live Activity/Dynamic Island local sem servidor (compacta com progresso, expandida/tela de bloqueio com barra, contagem até próximo lembrete e botão "Bebi 💧"), inicia ao abrir o app, limite de 8h aceito; histórico local de 7 dias + sequência; onboarding peso → meta → horários → permissão; visual fofo/ilustrado pastel com mascote cujas expressões mudam pelo nível; somente PT-BR."
+**Input**: User description: "iOS app (Expo, iOS focus) for hydration reminders, 'Wotah', with an animated bottle mascot. Use all decisions already made in SPEC.md at the project root: fixed 250 ml glass + '+' button and undo last sip; goal suggested by weight (35 ml/kg, multiples of 250 ml, editable); reminders computed from the wake/sleep window ÷ remaining glasses, rescheduled on every sip, none outside the window; notification with a 'Bebi 💧' action that logs without opening the app; once the goal is met, stop notifying for the day and show 'Bom trabalho! 🎉', keep counting above the goal; local Live Activity/Dynamic Island with no server (compact with progress, expanded/lock screen with bar, countdown to next reminder and a 'Bebi 💧' button), starts when the app opens, 8 h limit accepted; local 7-day history + streak; onboarding weight → goal → schedule → permission; cute pastel illustrated look with a mascot whose expressions change with the level; PT-BR only."
+
+> **Language note**: this document is in English (Constitution, Principle VI). Every quoted
+> user-facing string ("Bebi 💧", "Desfazer", "1,25 / 2 L", …) is the exact PT-BR text the app shows.
+
+## Clarifications
+
+### Session 2026-10-22
+
+- Q: Is the home-screen widget (small/medium/large, designed in `design/Wotah Widgets.html`) part of v1? → A: No. It is deferred to v2 and listed as out of scope.
+- Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The Live Activity itself updates immediately. The app's stored total, history and reminder schedule catch up the next time the app runs (pending sips are imported exactly once). The 2-second consistency target (SC-005) applies while the app is running. A native-code path is only adopted if on-device validation shows sips can be lost.
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Registrar água e ver a garrafa encher (Priority: P1)
+### User Story 1 - Log water and watch the bottle fill (Priority: P1)
 
-O usuário abre o app e vê uma garrafa-mascote que representa o progresso do dia em direção à meta. Cada vez que bebe um copo, toca no botão "+" e a garrafa sobe 250 ml com uma animação. A expressão do mascote muda conforme o nível. Se tocar sem querer, pode desfazer o último gole.
+The user opens the app and sees a bottle mascot that represents the day's progress toward the goal. Each time they drink a glass, they tap "+" and the bottle rises 250 ml with an animation. The mascot's expression changes with the level. If they tap by mistake, they can undo the last sip.
 
-**Why this priority**: É o núcleo do app. Sem registrar água e visualizar o progresso não há produto. Sozinha, essa história já entrega um contador de água visual e útil.
+**Why this priority**: This is the core of the app. Without logging water and seeing progress there is no product. On its own, this story already delivers a useful visual water counter.
 
-**Independent Test**: Com uma meta já definida, tocar "+" várias vezes e verificar que o total, a garrafa e a expressão do mascote se atualizam, e que o "Desfazer" reverte o último registro.
+**Independent Test**: With a goal already set, tap "+" several times and check that the total, the bottle and the mascot expression update, and that "Desfazer" reverts the last entry.
 
 **Acceptance Scenarios**:
 
-1. **Given** meta de 2 L e 0 ml registrados, **When** o usuário toca "+", **Then** o total passa a 250 ml, a garrafa sobe proporcionalmente com animação e o progresso exibe "0,25 / 2 L".
-2. **Given** um gole acabou de ser registrado, **When** o usuário toca "Desfazer" no aviso temporário, **Then** o total volta ao valor anterior e a garrafa desce.
-3. **Given** o aviso "Desfazer" já sumiu, **When** o usuário segura o botão "+" e escolhe "Desfazer último gole", **Then** o gole mais recente do dia é removido.
-4. **Given** 0 ml registrados no dia, **When** o usuário tenta desfazer, **Then** a opção fica indisponível e nada muda.
-5. **Given** o progresso do dia, **When** ele cruza 0%, ~50%, 100% e acima de 100%, **Then** o mascote exibe, respectivamente, as expressões "sedento", "animado", "radiante" e "comemorando".
+1. **Given** a 2 L goal and 0 ml logged, **When** the user taps "+", **Then** the total becomes 250 ml, the bottle rises proportionally with an animation and the progress shows "0,25 / 2 L".
+2. **Given** a sip was just logged, **When** the user taps "Desfazer" on the temporary toast, **Then** the total returns to its previous value and the bottle goes down.
+3. **Given** the "Desfazer" toast has already disappeared, **When** the user long-presses "+" and chooses "Desfazer último gole", **Then** the most recent sip of the day is removed.
+4. **Given** 0 ml logged today, **When** the user tries to undo, **Then** the option is unavailable and nothing changes.
+5. **Given** the day's progress, **When** it crosses 0%, ~50%, 100% and above 100%, **Then** the mascot shows, respectively, the "thirsty", "excited", "radiant" and "celebrating" expressions.
 
 ---
 
-### User Story 2 - Configurar meta e rotina no primeiro uso (Priority: P1)
+### User Story 2 - Set the goal and routine on first use (Priority: P1)
 
-Na primeira abertura, o usuário passa por um onboarding curto: informa o peso, recebe uma meta sugerida que pode ajustar, informa o horário em que acorda e em que dorme e, por fim, é convidado a permitir notificações.
+On first launch, the user goes through a short onboarding: enters their weight, receives a suggested goal they can adjust, enters their wake-up and bedtime, and finally is invited to allow notifications.
 
-**Why this priority**: A meta e a janela acordado são pré-requisito do progresso (US1) e dos lembretes (US3).
+**Why this priority**: The goal and the awake window are prerequisites for progress (US1) and reminders (US3).
 
-**Independent Test**: Instalar o app do zero, completar o onboarding e verificar que a Home mostra a meta escolhida e que as configurações refletem os valores informados.
+**Independent Test**: Install the app from scratch, complete onboarding and check that Home shows the chosen goal and that settings reflect the entered values.
 
 **Acceptance Scenarios**:
 
-1. **Given** primeiro uso, **When** o usuário informa 70 kg, **Then** o app sugere 2,5 L (70 × 35 ml = 2.450 ml, arredondado ao múltiplo de 250 ml mais próximo).
-2. **Given** a meta sugerida, **When** o usuário a ajusta, **Then** os valores mudam em passos de 250 ml.
-3. **Given** os horários informados (ex.: acordar 8h, dormir 22h), **When** o onboarding termina, **Then** o app pede permissão de notificações com uma explicação e abre a Home.
-4. **Given** o usuário recusa as notificações, **When** chega à Home, **Then** o app funciona normalmente para registro manual e exibe um aviso discreto explicando como ativar os lembretes.
-5. **Given** o app já configurado, **When** o usuário altera meta, peso ou horários nos Ajustes, **Then** os novos valores passam a valer imediatamente, preservando o que já foi bebido no dia.
+1. **Given** first use, **When** the user enters 70 kg, **Then** the app suggests 2.5 L (70 × 35 ml = 2,450 ml, rounded to the nearest multiple of 250 ml).
+2. **Given** the suggested goal, **When** the user adjusts it, **Then** the value changes in 250 ml steps.
+3. **Given** the entered times (e.g., wake 8:00, sleep 22:00), **When** onboarding ends, **Then** the app asks for notification permission with an explanation and opens Home.
+4. **Given** the user declines notifications, **When** they reach Home, **Then** the app works normally for manual logging and shows a discreet notice explaining how to enable reminders.
+5. **Given** the app is already set up, **When** the user changes goal, weight or times in Settings, **Then** the new values apply immediately, preserving what was already drunk today.
 
 ---
 
-### User Story 3 - Receber lembretes e registrar direto pela notificação (Priority: P1)
+### User Story 3 - Receive reminders and log straight from the notification (Priority: P1)
 
-Durante a janela acordado, o app lembra o usuário de beber água em intervalos calculados a partir do tempo restante e dos copos restantes. A notificação tem uma ação "Bebi 💧" que registra 250 ml sem abrir o app. Tocar na própria notificação também registra o gole e abre o app. Cada gole reagenda o próximo lembrete. Ao bater a meta, os lembretes param no dia.
+During the awake window, the app reminds the user to drink water at intervals computed from the remaining time and remaining glasses. The notification has a "Bebi 💧" action that logs 250 ml without opening the app. Tapping the notification itself also logs the sip and opens the app. Each sip reschedules the next reminder. Once the goal is met, reminders stop for the day.
 
-**Why this priority**: É a proposta central do app ("o app me lembra de beber água") e o principal caminho de registro no dia a dia.
+**Why this priority**: It is the app's central promise ("the app reminds me to drink water") and the main logging path in daily use.
 
-**Independent Test**: Configurar uma janela curta e uma meta pequena, aguardar os lembretes, usar a ação "Bebi 💧" e confirmar que o total sobe, o próximo lembrete é reagendado e que, ao bater a meta, nenhum outro lembrete chega no dia.
+**Independent Test**: Configure a short window and a small goal, wait for reminders, use the "Bebi 💧" action and confirm that the total rises, the next reminder is rescheduled and, once the goal is met, no other reminder arrives that day.
 
 **Acceptance Scenarios**:
 
-1. **Given** meta de 2 L, 0 ml bebidos e janela 8h–22h, **When** o dia começa às 8h, **Then** os lembretes são espaçados em ~1h45 (14 h ÷ 8 copos).
-2. **Given** uma notificação de lembrete, **When** o usuário toca em "Bebi 💧", **Then** 250 ml são registrados sem abrir o app e o próximo lembrete é reagendado com base no novo restante.
-3. **Given** uma notificação de lembrete, **When** o usuário toca no corpo da notificação, **Then** o app abre com 250 ml registrados e o aviso "Desfazer" visível.
-4. **Given** o usuário registrou um gole pelo "+" às 10h, **When** o próximo lembrete estava previsto para 10h15, **Then** ele é reagendado para 10h + intervalo recalculado.
-5. **Given** o total atinge ou passa a meta, **When** isso acontece por qualquer meio, **Then** todos os lembretes restantes do dia são cancelados e o app exibe "Bom trabalho! 🎉".
-6. **Given** a hora atual está fora da janela acordado, **When** um lembrete seria calculado, **Then** nenhum lembrete é disparado até o início da próxima janela.
-7. **Given** a meta foi batida e o usuário desfaz goles até ficar abaixo dela, **When** ainda há tempo na janela, **Then** os lembretes voltam a ser agendados.
+1. **Given** a 2 L goal, 0 ml drunk and an 8:00–22:00 window, **When** the day starts at 8:00, **Then** reminders are spaced ~1h45 apart (14 h ÷ 8 glasses).
+2. **Given** a reminder notification, **When** the user taps "Bebi 💧", **Then** 250 ml is logged without opening the app and the next reminder is rescheduled based on the new remainder.
+3. **Given** a reminder notification, **When** the user taps the notification body, **Then** the app opens with 250 ml logged and the "Desfazer" toast visible.
+4. **Given** the user logged a sip with "+" at 10:00, **When** the next reminder was due at 10:15, **Then** it is rescheduled to 10:00 + the recomputed interval.
+5. **Given** the total reaches or exceeds the goal, **When** this happens by any means, **Then** all remaining reminders for the day are cancelled and the app shows "Bom trabalho! 🎉".
+6. **Given** the current time is outside the awake window, **When** a reminder would be computed, **Then** no reminder fires until the start of the next window.
+7. **Given** the goal was met and the user undoes sips until falling below it, **When** there is still time left in the window, **Then** reminders are scheduled again.
 
 ---
 
-### User Story 4 - Acompanhar pela Dynamic Island e tela de bloqueio (Priority: P2)
+### User Story 4 - Follow along on the Dynamic Island and lock screen (Priority: P2)
 
-Com o app aberto no dia, uma atividade ao vivo aparece na Dynamic Island e na tela de bloqueio, mostrando o progresso. Na forma expandida e na tela de bloqueio aparecem uma barra de progresso, a contagem até o próximo lembrete e um botão "Bebi 💧" que registra o gole sem abrir o app.
+With the app opened that day, a live activity appears on the Dynamic Island and the lock screen, showing progress. The expanded form and the lock screen show a progress bar, the countdown to the next reminder and a "Bebi 💧" button that logs the sip without opening the app.
 
-**Why this priority**: É um diferencial importante, mas o app entrega valor completo sem ele (P1s). Também depende das capacidades do aparelho.
+**Why this priority**: It is an important differentiator, but the app delivers full value without it (P1s). It also depends on device capabilities.
 
-**Independent Test**: Em um iPhone com Dynamic Island, abrir o app, ir para a tela inicial do sistema e verificar a forma compacta. Expandir, tocar "Bebi 💧" e confirmar que o total no app e na atividade sobem 250 ml.
+**Independent Test**: On an iPhone with a Dynamic Island, open the app, go to the system home screen and check the compact form. Expand, tap "Bebi 💧" and confirm that the total in the app and in the activity rises by 250 ml.
 
 **Acceptance Scenarios**:
 
-1. **Given** o app é aberto em um dia com meta não batida, **When** não há atividade ao vivo em andamento, **Then** uma é iniciada mostrando o progresso atual.
-2. **Given** a atividade em andamento, **When** vista na forma compacta, **Then** mostra um ícone de gota/mini-garrafa e o progresso no formato "1,25 / 2 L".
-3. **Given** a forma mínima (outra atividade disputa a ilha), **When** exibida, **Then** mostra a gota com um anel de progresso.
-4. **Given** a forma expandida ou a tela de bloqueio, **When** o usuário toca "Bebi 💧", **Then** 250 ml são registrados e a atividade, o app e os lembretes se atualizam.
-5. **Given** um gole registrado por qualquer meio, **When** a atividade está ativa, **Then** ela reflete o novo total e a nova contagem até o próximo lembrete.
-6. **Given** a meta é batida, **When** a atividade está ativa, **Then** ela mostra "Bom trabalho! 🎉" por alguns minutos e é encerrada.
-7. **Given** a atividade expirou pelo limite de tempo do sistema, **When** o usuário reabre o app e a meta ainda não foi batida, **Then** uma nova atividade é iniciada; enquanto isso, os lembretes por notificação continuam normalmente.
+1. **Given** the app is opened on a day whose goal is not met, **When** there is no live activity running, **Then** one is started showing current progress.
+2. **Given** the activity is running, **When** seen in compact form, **Then** it shows a drop/mini-bottle icon and progress in the "1,25 / 2 L" format.
+3. **Given** the minimal form (another activity shares the island), **When** displayed, **Then** it shows the drop with a progress ring.
+4. **Given** the expanded form or the lock screen, **When** the user taps "Bebi 💧", **Then** 250 ml is logged and the activity updates immediately; the app and reminders reflect it within 2 s while the app is running, or the next time the app runs otherwise.
+5. **Given** a sip logged by any means, **When** the activity is running, **Then** it reflects the new total and the new countdown to the next reminder.
+6. **Given** the goal is met, **When** the activity is running, **Then** it shows "Bom trabalho! 🎉" for a few minutes and then ends.
+7. **Given** the activity expired due to the system time limit, **When** the user reopens the app and the goal is still not met, **Then** a new activity is started; meanwhile, notification reminders continue normally.
 
 ---
 
-### User Story 5 - Ver histórico da semana e sequência (Priority: P3)
+### User Story 5 - See the week's history and streak (Priority: P3)
 
-Na Home, o usuário vê os últimos 7 dias (cheio = meta batida, parcial, vazio) e um contador de sequência de dias consecutivos batendo a meta.
+On Home, the user sees the last 7 days (full = goal met, partial, empty) and a counter of consecutive days meeting the goal.
 
-**Why this priority**: Dá motivação e contexto, mas não é necessário para o uso diário básico.
+**Why this priority**: It adds motivation and context, but is not needed for basic daily use.
 
-**Independent Test**: Com dados de vários dias, verificar que a faixa de 7 dias e a sequência refletem corretamente quais dias bateram a meta.
+**Independent Test**: With data from several days, check that the 7-day strip and the streak correctly reflect which days met the goal.
 
 **Acceptance Scenarios**:
 
-1. **Given** dados dos últimos 7 dias, **When** a Home é aberta, **Then** cada dia aparece como cheio (≥ meta do dia), parcial (> 0 e < meta) ou vazio (0).
-2. **Given** a meta foi batida ontem e anteontem, mas não antes disso, **When** hoje ainda não foi batida, **Then** a sequência mostra "🔥 2 dias".
-3. **Given** a sequência de 2 dias, **When** o usuário bate a meta hoje, **Then** a sequência passa a "🔥 3 dias".
-4. **Given** um dia sem bater a meta, **When** o dia seguinte começa, **Then** a sequência volta a zero e não é exibida até a meta ser batida novamente.
+1. **Given** data for the last 7 days, **When** Home opens, **Then** each day appears as full (≥ that day's goal), partial (> 0 and < goal) or empty (0).
+2. **Given** the goal was met yesterday and the day before, but not earlier, **When** today's goal is not yet met, **Then** the streak shows "🔥 2 dias".
+3. **Given** a 2-day streak, **When** the user meets today's goal, **Then** the streak becomes "🔥 3 dias".
+4. **Given** a day without meeting the goal, **When** the next day starts, **Then** the streak resets to zero and is not shown until the goal is met again.
 
 ---
 
 ### Edge Cases
 
-- **Início tardio do dia**: se o usuário abre o app pela primeira vez no dia às 15h, o intervalo é calculado sobre o tempo restante da janela, não sobre a janela inteira.
-- **Janela curta demais**: se o intervalo calculado ficar abaixo de 30 minutos, os lembretes passam a ser a cada 30 minutos. O app não tenta "compensar" com notificações seguidas.
-- **Último lembrete do dia**: nenhum lembrete é agendado depois do horário de dormir, mesmo que a meta não tenha sido batida.
-- **Janela que cruza a meia-noite** (ex.: acordar 10h, dormir 1h): é suportada. Os goles após a meia-noite e antes do horário de dormir contam para o dia que começou no último horário de acordar.
-- **Virada do dia**: o progresso zera no horário de acordar. Goles registrados entre o horário de dormir e o de acordar contam para o dia anterior.
-- **Meta alterada no meio do dia**: o total já bebido é mantido. Se a nova meta já foi alcançada, os lembretes param e o app comemora. Caso contrário, os lembretes são recalculados.
-- **Acima da meta**: o app continua contando (ex.: "2,25 / 2 L"), a garrafa permanece cheia com brilho e nenhum lembrete volta a ser agendado.
-- **Notificações negadas ou desativadas depois**: o registro manual, a garrafa e o histórico funcionam. O app indica que os lembretes estão desativados e como reativá-los.
-- **Toque duplo na ação "Bebi 💧"**: cada toque registra um gole, e o usuário pode corrigir com "Desfazer".
-- **Aparelho sem Dynamic Island ou versão de sistema sem suporte a botões interativos**: a atividade aparece só onde for suportada (ex.: tela de bloqueio). Sem o botão interativo, tocar na atividade abre o app.
-- **Mudança de fuso horário ou de relógio**: o app usa sempre a hora local atual do aparelho para calcular o dia e a janela.
-- **Peso fora da faixa**: o app aceita pesos entre 30 kg e 250 kg. A meta fica limitada entre 0,5 L e 6 L.
+- **Late start of the day**: if the user opens the app for the first time that day at 15:00, the interval is computed over the remaining window time, not the whole window.
+- **Window too short**: if the computed interval falls below 30 minutes, reminders are sent every 30 minutes. The app does not try to "catch up" with back-to-back notifications.
+- **Last reminder of the day**: no reminder is scheduled after bedtime, even if the goal was not met.
+- **Window crossing midnight** (e.g., wake 10:00, sleep 1:00): supported. Sips after midnight and before bedtime count toward the day that started at the last wake time.
+- **Day rollover**: progress resets at wake time. Sips logged between bedtime and wake time count toward the previous day.
+- **Goal changed mid-day**: the amount already drunk is kept. If the new goal is already reached, reminders stop and the app celebrates. Otherwise, reminders are recomputed.
+- **Above the goal**: the app keeps counting (e.g., "2,25 / 2 L"), the bottle stays full with a shine and no reminder is scheduled again.
+- **Notifications denied or later disabled**: manual logging, the bottle and history work. The app indicates reminders are off and how to turn them back on.
+- **Double tap on the "Bebi 💧" action**: each tap logs a sip, and the user can correct it with "Desfazer".
+- **Sip logged outside the app while the app is not running** (notification action or live activity button): the sip MUST NOT be lost or counted twice. Until the app runs again, already-scheduled reminders may arrive as originally planned (at most one reminder earlier than the recomputed schedule would place it).
+- **Device without Dynamic Island or OS version without interactive buttons**: the activity appears only where supported (e.g., lock screen). Without the interactive button, tapping the activity opens the app.
+- **Time zone or clock change**: the app always uses the device's current local time to compute the day and the window.
+- **Weight out of range**: the app accepts weights between 30 kg and 250 kg. The goal is limited to 0.5 L–6 L.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-**Registro e progresso**
+**Logging and progress**
 
-- **FR-001**: O app MUST registrar goles em unidades fixas de 250 ml.
-- **FR-002**: O app MUST oferecer na Home um botão "+" que registra um gole.
-- **FR-003**: O app MUST permitir desfazer o gole mais recente do dia, por um aviso temporário exibido após cada gole e por uma opção ao segurar o botão "+". O desfazer pode ser repetido até o total do dia chegar a zero.
-- **FR-004**: O app MUST exibir o progresso do dia em litros, com vírgula decimal (ex.: "1,25 / 2 L").
-- **FR-005**: O app MUST representar o progresso com uma garrafa-mascote cujo nível de água é proporcional ao progresso (limitado a cheio) e anima a cada gole.
-- **FR-006**: O mascote MUST ter quatro expressões ligadas ao progresso: sedento (< 25%), animado (25%–99%), radiante (100%) e comemorando (> 100%).
-- **FR-007**: O app MUST continuar contando acima da meta.
+- **FR-001**: The app MUST log sips in fixed 250 ml units.
+- **FR-002**: The app MUST offer a "+" button on Home that logs a sip.
+- **FR-003**: The app MUST allow undoing the day's most recent sip, via a temporary toast shown after each sip and via an option when long-pressing "+". Undo may be repeated until the day's total reaches zero.
+- **FR-004**: The app MUST show the day's progress in liters with a decimal comma (e.g., "1,25 / 2 L").
+- **FR-005**: The app MUST represent progress with a bottle mascot whose water level is proportional to progress (capped at full) and animates on every sip.
+- **FR-006**: The mascot MUST have four expressions tied to progress: thirsty (< 25%), excited (25%–99%), radiant (100%) and celebrating (> 100%).
+- **FR-007**: The app MUST keep counting above the goal.
 
-**Meta e configuração**
+**Goal and setup**
 
-- **FR-008**: Na primeira abertura, o app MUST conduzir o onboarding na ordem: peso → meta sugerida editável → horários de acordar e dormir → pedido de permissão de notificações.
-- **FR-009**: O app MUST sugerir a meta como peso (kg) × 35 ml, arredondada ao múltiplo de 250 ml mais próximo e limitada entre 0,5 L e 6 L.
-- **FR-010**: O usuário MUST poder editar a meta em passos de 250 ml, no onboarding e nos Ajustes.
-- **FR-011**: O usuário MUST poder alterar peso, meta, horários e ligar/desligar lembretes nos Ajustes. Alterações valem imediatamente e preservam o total do dia.
-- **FR-012**: Alterar o peso nos Ajustes MUST oferecer (sem impor) atualizar a meta para o novo valor sugerido.
+- **FR-008**: On first launch, the app MUST run onboarding in this order: weight → editable suggested goal → wake and sleep times → notification permission request.
+- **FR-009**: The app MUST suggest the goal as weight (kg) × 35 ml, rounded to the nearest multiple of 250 ml and limited to 0.5 L–6 L.
+- **FR-010**: The user MUST be able to edit the goal in 250 ml steps, in onboarding and in Settings.
+- **FR-011**: The user MUST be able to change weight, goal, times and turn reminders on/off in Settings. Changes apply immediately and preserve the day's total.
+- **FR-012**: Changing the weight in Settings MUST offer (not impose) updating the goal to the new suggested value.
 
-**Lembretes**
+**Reminders**
 
-- **FR-013**: O app MUST agendar lembretes apenas dentro da janela acordado do usuário.
-- **FR-014**: O intervalo entre lembretes MUST ser o tempo restante na janela dividido pelo número de copos restantes para a meta, com mínimo de 30 minutos.
-- **FR-015**: Todo gole registrado, por qualquer meio, MUST reagendar o próximo lembrete para o momento do gole somado ao intervalo recalculado.
-- **FR-016**: Os lembretes MUST ter a ação "Bebi 💧", que registra um gole sem abrir o app.
-- **FR-017**: Tocar no corpo de um lembrete MUST abrir o app, registrar um gole e exibir o aviso "Desfazer".
-- **FR-018**: Ao atingir a meta, o app MUST cancelar todos os lembretes restantes do dia e exibir a comemoração "Bom trabalho! 🎉".
-- **FR-019**: Se um desfazer levar o total abaixo da meta, o app MUST voltar a agendar lembretes, se ainda houver tempo na janela.
-- **FR-020**: Os textos dos lembretes MUST ser curtos e simpáticos, em PT-BR, e podem variar entre algumas opções.
+- **FR-013**: The app MUST schedule reminders only within the user's awake window.
+- **FR-014**: The interval between reminders MUST be the remaining window time divided by the number of glasses remaining to the goal, with a 30-minute minimum.
+- **FR-015**: Every sip logged, by any means, MUST reschedule the next reminder to the time of the sip plus the recomputed interval. For sips logged outside the app while it is not running, rescheduling happens the next time the app runs (see Clarifications).
+- **FR-016**: Reminders MUST have a "Bebi 💧" action that logs a sip without opening the app.
+- **FR-017**: Tapping the body of a reminder MUST open the app, log a sip and show the "Desfazer" toast.
+- **FR-018**: When the goal is met, the app MUST cancel all remaining reminders for the day and show the "Bom trabalho! 🎉" celebration.
+- **FR-019**: If an undo takes the total below the goal, the app MUST schedule reminders again, if there is still time in the window.
+- **FR-020**: Reminder texts MUST be short and friendly, in PT-BR, and may vary among a few options.
 
-**Dynamic Island / atividade ao vivo**
+**Dynamic Island / live activity**
 
-- **FR-021**: Em aparelhos com suporte, ao abrir o app em um dia com meta não batida, o app MUST iniciar uma atividade ao vivo, caso não haja uma em andamento.
-- **FR-022**: A atividade MUST mostrar: na forma compacta, gota/mini-garrafa e progresso "X / Y L"; na forma mínima, gota com anel de progresso; na forma expandida e na tela de bloqueio, barra de progresso, contagem até o próximo lembrete e botão "Bebi 💧".
-- **FR-023**: O botão "Bebi 💧" da atividade MUST registrar um gole sem abrir o app e atualizar app, atividade e lembretes.
-- **FR-024**: A atividade MUST refletir todo gole registrado por qualquer meio.
-- **FR-025**: Ao bater a meta, a atividade MUST mostrar "Bom trabalho! 🎉" brevemente e então ser encerrada.
-- **FR-026**: A atividade MUST funcionar sem nenhum servidor. É aceito que ela expire pelo limite de tempo do sistema e só seja reiniciada quando o usuário abrir o app.
+- **FR-021**: On supported devices, when the app opens on a day whose goal is not met, the app MUST start a live activity if none is running.
+- **FR-022**: The activity MUST show: in compact form, a drop/mini-bottle and "X / Y L" progress; in minimal form, a drop with a progress ring; in expanded form and on the lock screen, a progress bar, the countdown to the next reminder and a "Bebi 💧" button.
+- **FR-023**: The activity's "Bebi 💧" button MUST log a sip without opening the app and update the activity immediately. The app's stored total and reminders MUST reflect it within 2 s while the app is running, or the next time the app runs otherwise, exactly once.
+- **FR-024**: The activity MUST reflect every sip logged by any means.
+- **FR-025**: When the goal is met, the activity MUST briefly show "Bom trabalho! 🎉" and then end.
+- **FR-026**: The activity MUST work without any server. It is accepted that it expires due to the system time limit and only restarts when the user opens the app.
 
-**Histórico**
+**History**
 
-- **FR-027**: O app MUST salvar no aparelho o total e a meta de cada dia.
-- **FR-028**: A Home MUST mostrar os últimos 7 dias como cheio, parcial ou vazio, comparando cada dia com a meta vigente naquele dia.
-- **FR-029**: O app MUST exibir a sequência de dias consecutivos com a meta batida, terminando hoje (se já batida) ou ontem. A sequência só aparece quando for ≥ 1.
+- **FR-027**: The app MUST store each day's total and goal on the device.
+- **FR-028**: Home MUST show the last 7 days as full, partial or empty, comparing each day with the goal in force that day.
+- **FR-029**: The app MUST show the streak of consecutive days with the goal met, ending today (if already met) or yesterday. The streak only appears when it is ≥ 1.
 
-**Geral**
+**General**
 
-- **FR-030**: O dia do app MUST começar no horário de acordar do usuário. O progresso zera nesse momento.
-- **FR-031**: Todos os dados MUST ficar apenas no aparelho. O app não exige conta nem conexão com a internet.
-- **FR-032**: Toda a interface e as notificações MUST estar em português do Brasil.
-- **FR-033**: O app MUST suportar modo claro e modo escuro do sistema.
-- **FR-034**: O visual MUST seguir o estilo fofo/ilustrado em tons pastel, com a garrafa-mascote como elemento central.
+- **FR-030**: The app's day MUST start at the user's wake time. Progress resets at that moment.
+- **FR-031**: All data MUST stay on the device only. The app requires no account and no internet connection.
+- **FR-032**: The entire interface and notifications MUST be in Brazilian Portuguese.
+- **FR-033**: The app MUST support the system's light and dark modes.
+- **FR-034**: The visual style MUST follow the cute/illustrated pastel style, with the bottle mascot as the central element.
 
 ### Key Entities
 
-- **Perfil do usuário**: peso (kg), meta diária (ml), horário de acordar, horário de dormir, lembretes ligados/desligados, onboarding concluído.
-- **Gole**: quantidade (sempre 250 ml), momento do registro, origem (botão "+", notificação, atividade ao vivo). Pertence a um Dia.
-- **Dia**: data de referência (iniciada no horário de acordar), meta vigente no dia, total bebido, meta batida (sim/não). Agrupa os Goles.
-- **Lembrete**: horário agendado, pertence ao Dia atual. É recalculado a cada gole e cancelado quando a meta é batida.
+- **User profile**: weight (kg), daily goal (ml), wake time, sleep time, reminders on/off, onboarding completed.
+- **Sip**: amount (always 250 ml), time logged, source ("+" button, notification, live activity). Belongs to a Day.
+- **Day**: reference date (starting at wake time), goal in force that day, total drunk, goal met (yes/no). Groups Sips.
+- **Reminder**: scheduled time, belongs to the current Day. Recomputed on every sip and cancelled when the goal is met.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: Um novo usuário conclui o onboarding em menos de 1 minuto.
-- **SC-002**: Registrar um gole a partir de uma notificação ou da Dynamic Island leva no máximo 1 toque e não exige abrir o app.
-- **SC-003**: Após bater a meta, 0 lembretes são entregues até o início do dia seguinte, em 100% dos dias testados.
-- **SC-004**: Nenhum lembrete é entregue fora da janela acordado, em 100% dos dias testados.
-- **SC-005**: Após qualquer gole, o total exibido no app, na atividade ao vivo e o próximo lembrete ficam consistentes entre si em até 2 segundos.
-- **SC-006**: A animação da garrafa ao registrar um gole roda de forma fluida, sem travamentos perceptíveis, em aparelhos compatíveis.
-- **SC-007**: Em testes com usuários, ao menos 9 de 10 pessoas conseguem registrar e desfazer um gole sem instruções.
-- **SC-008**: O app funciona por completo (registro, lembretes, histórico) sem conexão com a internet.
+- **SC-001**: A new user completes onboarding in under 1 minute.
+- **SC-002**: Logging a sip from a notification or the Dynamic Island takes at most 1 tap and does not require opening the app.
+- **SC-003**: After the goal is met, 0 reminders are delivered until the start of the next day, in 100% of tested days.
+- **SC-004**: No reminder is delivered outside the awake window, in 100% of tested days.
+- **SC-005**: While the app is running, after any sip the total shown in the app, in the live activity and the next reminder are consistent with each other within 2 seconds. When the sip happens while the app is not running, they become consistent within 2 seconds of the app next running, with no sip lost or duplicated.
+- **SC-006**: The bottle animation when logging a sip runs smoothly, with no perceptible stutter, on compatible devices.
+- **SC-007**: In user tests, at least 9 out of 10 people can log and undo a sip without instructions.
+- **SC-008**: The app works fully (logging, reminders, history) with no internet connection.
 
 ## Assumptions
 
-- **Plataforma**: o foco é iPhone. A Dynamic Island exige um modelo compatível, e o botão interativo da atividade exige uma versão do sistema que o suporte. Outras plataformas ficam para depois, mas a solução deve permitir levá-las sem reescrever as regras de negócio.
-- **Ambiente de desenvolvimento**: o time não tem Mac. A solução deve ser construível e testável sem Mac, com builds em nuvem e uma conta de desenvolvedor da Apple paga (já aceito pelo usuário).
-- **Toque no corpo da notificação registra um gole**: segue o pedido original do usuário ("ao clicar na notificação ele marca que eu bebi"). O "Desfazer" cobre toques acidentais.
-- **Expressões do mascote**: os limiares (25% / 100%) são um padrão razoável, que pode ser ajustado no design.
-- **Intervalo mínimo de 30 min e faixas de peso/meta**: são padrões razoáveis, escolhidos para evitar excesso de notificações e valores absurdos.
-- **Sem servidor e sem conta**: não há sincronização entre aparelhos nem backup na nuvem na v1.
-- **Fora do escopo da v1**: reinício automático da atividade ao vivo sem abrir o app, gráficos de longo prazo, vários tamanhos de copo, inglês ou outros idiomas, versão Android polida, integração com apps de saúde.
-- **Nome "Wotah"**: é provisório.
+- **Platform**: the focus is iPhone. The Dynamic Island requires a compatible model, and the activity's interactive button requires an OS version that supports it. Other platforms come later, but the solution must allow bringing them over without rewriting the business rules.
+- **Development environment**: the team has no Mac. The solution must be buildable and testable without a Mac, with cloud builds and a paid Apple developer account (already accepted by the user).
+- **Tapping the notification body logs a sip**: follows the user's original request ("when I tap the notification it marks that I drank"). "Desfazer" covers accidental taps.
+- **Mascot expressions**: the thresholds (25% / 100%) are a reasonable default that can be adjusted in design.
+- **30-minute minimum interval and weight/goal ranges**: reasonable defaults chosen to avoid excessive notifications and absurd values.
+- **No server and no account**: no cross-device sync or cloud backup in v1.
+- **Out of scope for v1**: home-screen widget (designed in `design/Wotah Widgets.html`; planned for v2), automatic restart of the live activity without opening the app, long-term charts, multiple glass sizes, English or other languages, a polished Android version, health-app integration.
+- **Name "Wotah"**: provisional.

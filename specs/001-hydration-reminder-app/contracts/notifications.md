@@ -1,16 +1,16 @@
-# Contrato — Notificações locais
+# Contract — Local notifications
 
-Implementação: `src/services/notifications/` sobre `expo-notifications` (R4).
+Implementation: `src/services/notifications/` on top of `expo-notifications` (R4).
 
-## Categoria e ação
+## Category and action
 
-| Item | Valor |
+| Item | Value |
 |---|---|
 | `categoryIdentifier` | `WOTAH_REMINDER` |
-| Ação | `identifier: "DRINK"`, `buttonTitle: "Bebi 💧"`, `options.opensAppToForeground: false` |
-| Registro | `setNotificationCategoryAsync` no boot do app, antes de qualquer agendamento |
+| Action | `identifier: "DRINK"`, `buttonTitle: "Bebi 💧"`, `options.opensAppToForeground: false` |
+| Registration | `setNotificationCategoryAsync` at app boot, before any scheduling |
 
-## Conteúdo de cada lembrete
+## Content of each reminder
 
 ```ts
 {
@@ -25,9 +25,9 @@ Implementação: `src/services/notifications/` sobre `expo-notifications` (R4).
 }
 ```
 
-## Textos (FR-020; origem: `design/Wotah Live Activity.html`)
+## Texts (FR-020; source: `design/Wotah Live Activity.html`). User-facing, PT-BR verbatim
 
-| # | Título | Corpo |
+| # | Title | Body |
 |---|---|---|
 | 1 | Hora de um golinho! 💧 | Faltam {n} copos pra meta de hoje. |
 | 2 | Psiu… tô com sedinha 🥺 | Um copo agora e eu fico felizona. |
@@ -36,23 +36,24 @@ Implementação: `src/services/notifications/` sobre `expo-notifications` (R4).
 | 5 | Sua garrafinha lembrou de você | Bebe um copinho comigo? |
 | 6 | Glub glub? 💦 | Só um copo e a gente segue o dia. |
 | 7 | Um golinho pra dar energia ☀️ | Já são {x} L hoje. Bora pro próximo? |
-| 8 | Falta pouquinho! 💧 | Mais 1 copo e a meta de hoje tá feita. *(só quando `n = 1`)* |
+| 8 | Falta pouquinho! 💧 | Mais 1 copo e a meta de hoje tá feita. *(only when `n = 1`)* |
 
-Regras: `{n}` usa singular/plural ("1 copo" / "2 copos"). `{x}` usa `formatLiters`. A mensagem 7 não aparece quando o consumo é 0. Nunca usar tom de culpa (DESIGN-BRIEF).
+Rules: `{n}` uses singular/plural ("1 copo" / "2 copos"). `{x}` uses `formatLiters`. Message 7 is
+not used when consumption is 0. Never use guilt language (Constitution VI).
 
-## Tratamento de respostas
+## Response handling
 
-| Evento | `actionIdentifier` | Efeito |
+| Event | `actionIdentifier` | Effect |
 |---|---|---|
-| Toque em "Bebi 💧" | `DRINK` | `registerSip('notification_action')` sem abrir o app (FR-016) |
-| Toque no corpo | `expo.modules.notifications.actions.DEFAULT` | abre o app → `registerSip('notification_tap')` → Home com toast "Desfazer" (FR-017) |
+| Tap on "Bebi 💧" | `DRINK` | `registerSip('notification_action')` without opening the app (FR-016) |
+| Tap on the body | `expo.modules.notifications.actions.DEFAULT` | opens the app → `registerSip('notification_tap')` → Home with the "Desfazer" toast (FR-017) |
 
-- O handler é registrado no escopo do módulo de entrada (antes do render) e também consultado via `getLastNotificationResponse()` no cold start e a cada `AppState → active`.
-- Idempotência: `event_key = notif:${request.identifier}:${actionIdentifier}` em `processed_event`. Uma resposta já processada é ignorada. Toques em notificações diferentes sempre contam (edge case "toque duplo": cada toque registra um gole).
-- Em primeiro plano, `setNotificationHandler` mostra o banner (`shouldShowBanner: true`, `shouldShowList: true`, `shouldPlaySound: false`).
+- The handler is registered at the entry module's scope (before render) and also checked via `getLastNotificationResponse()` on cold start and on every `AppState → active`.
+- Idempotency: `event_key = notif:${request.identifier}:${actionIdentifier}` in `processed_event`. An already-processed response is ignored. Taps on different notifications always count (edge case "double tap": each tap logs a sip).
+- In the foreground, `setNotificationHandler` shows the banner (`shouldShowBanner: true`, `shouldShowList: true`, `shouldPlaySound: false`).
 
-## Agendamento
+## Scheduling
 
-- `replaceAll(reminders)`: cancela todos os `rem:*` (`cancelAllScheduledNotificationsAsync`, porque o app não tem outras notificações) e agenda a lista nova. O limite é ≤ 48 itens, abaixo dos 64 pendentes permitidos pelo iOS.
-- Notificações desativadas (FR edge case): `permission() !== 'granted'` → nada é agendado e a Home mostra o aviso discreto com um link para os Ajustes do sistema (`Linking.openSettings()`).
-- Permissão pedida **só** no passo 4 do onboarding, depois da tela explicativa "Posso te dar um toquinho?".
+- `replaceAll(reminders)`: cancels all `rem:*` notifications (`cancelAllScheduledNotificationsAsync`, since the app has no other notifications) and schedules the new list. The list has ≤ 48 items, below the 64 pending notifications iOS allows.
+- Notifications disabled (spec edge case): `permission() !== 'granted'` → nothing is scheduled and Home shows the discreet notice with a link to system Settings (`Linking.openSettings()`).
+- Permission is requested **only** at onboarding step 4, after the "Posso te dar um toquinho?" explainer screen.

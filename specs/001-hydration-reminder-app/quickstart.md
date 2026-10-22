@@ -53,7 +53,7 @@ Record each spike's outcome in `research.md` (final decision).
 3. **Reminders (US3)**: in Settings, window = now → now + 2 h, goal 1 L. Expect reminders every ~30 min (2 h ÷ 4 glasses). Tap "Bebi 💧" on the notification without opening the app → open the app: total +250 and "Próximo lembrete" recomputed. Meet the goal → "Bom trabalho! 🎉" and **no** notification until the next wake time (SC-003). Undo a sip → reminders return.
 4. **Body tap (FR-017)**: the app opens with +250 ml and the "Desfazer" toast.
 5. **Outside the window (SC-004)**: window already over for today → no reminder until tomorrow at wake time.
-6. **Live Activity (US4)**: open the app → compact island "drop + 0,25 / 2 L" → long-press to expand → "Bebi 💧" → island, app and "next reminder" consistent in ≤ 2 s with the app alive (SC-005) → meet the goal → "Bom trabalho! 🎉" and the activity disappears in ~5 min.
+6. **Live Activity (US4)** (on an iOS 16.4–16.x device, tapping the activity must open the app with +250 ml and the "Desfazer" toast): open the app → compact island "drop + 0,25 / 2 L" → long-press to expand → "Bebi 💧" → island, app and "next reminder" consistent in ≤ 2 s with the app alive (SC-005) → meet the goal → "Bom trabalho! 🎉" and the activity disappears in ~5 min.
 7. **Live Activity with the app terminated (SC-005 caveat)**: terminate the app → "Bebi 💧" on the lock screen → the activity updates immediately → open the app → the total matches within 2 s, with no sip lost or duplicated.
 8. **History (US5)**: with the dev seed (`npm run seed:week`, dev only), the strip shows full/partial/empty and "🔥 2 dias"; meeting today's goal → "🔥 3 dias".
 9. **Notifications denied**: decline during onboarding → Home shows the discreet notice; "+" works normally.

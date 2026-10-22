@@ -17,6 +17,7 @@
 
 - Q: Is the home-screen widget (small/medium/large, designed in `design/Wotah Widgets.html`) part of v1? → A: No. It is deferred to v2 and listed as out of scope.
 - Q: Does SC-003 (no reminders after the goal) hold when the goal is reached by sips logged while the app is not running? → A: Not until the app next runs. Already-scheduled reminders may still arrive in that window; this is accepted for v1 (no native code), consistent with the answer below.
+- Q: On devices without the interactive live activity button (older OS), what does tapping the activity do? → A: It opens the app and logs a sip with the "Desfazer" toast, like tapping a reminder's body, so logging stays one tap from every entry point.
 - Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The Live Activity itself updates immediately. The app's stored total, history and reminder schedule catch up the next time the app runs (pending sips are imported exactly once). The 2-second consistency target (SC-005) applies while the app is running. A native-code path is only adopted if on-device validation shows sips can be lost.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -126,7 +127,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 - **Notifications denied or later disabled**: manual logging, the bottle and history work. The app indicates reminders are off and how to turn them back on.
 - **Double tap on the "Bebi 💧" action**: each tap logs a sip, and the user can correct it with "Desfazer".
 - **Sip logged outside the app while the app is not running** (notification action or live activity button): the sip MUST NOT be lost or counted twice. Until the app runs again, already-scheduled reminders keep their original times (so they may arrive earlier than the recomputed schedule would place them, or after the goal was reached that way); the schedule is corrected as soon as the app runs.
-- **Device without Dynamic Island or OS version without interactive buttons**: the activity appears only where supported (e.g., lock screen). Without the interactive button, tapping the activity opens the app.
+- **Device without Dynamic Island or OS version without interactive buttons**: the activity appears only where supported (e.g., lock screen). Without the interactive button, tapping the activity opens the app and logs a sip, showing the "Desfazer" toast (same behavior as tapping a reminder's body).
 - **Time zone or clock change**: the app always uses the device's current local time to compute the day and the window.
 - **Weight out of range**: the app accepts weights between 30 kg and 250 kg. The goal is limited to 0.5 L–6 L.
 
@@ -169,7 +170,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 - **FR-022**: The activity MUST show: in compact form, a drop/mini-bottle and "X / Y L" progress; in minimal form, a drop with a progress ring; in expanded form and on the lock screen, a progress bar, the countdown to the next reminder and a "Bebi 💧" button. When reminders are off or notifications are not allowed, the countdown line is hidden.
 - **FR-023**: The activity's "Bebi 💧" button MUST log a sip without opening the app and update the activity immediately. The app's stored total and reminders MUST reflect it within 2 s while the app is running, or the next time the app runs otherwise, exactly once.
 - **FR-024**: The activity MUST reflect every sip logged by any means.
-- **FR-025**: When the goal is met, the activity MUST briefly show "Bom trabalho! 🎉" and then end.
+- **FR-025**: When the goal is met, the activity MUST briefly show "Bom trabalho! 🎉" and then end. If the goal was reached by sips logged while the app was not running, the activity shows the celebration and ends the next time the app runs (or when the system time limit expires).
 - **FR-026**: The activity MUST work without any server. It is accepted that it expires due to the system time limit and only restarts when the user opens the app.
 
 **History**
@@ -189,7 +190,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 ### Key Entities
 
 - **User profile**: weight (kg), daily goal (ml), wake time, sleep time, reminders on/off, onboarding completed.
-- **Sip**: amount (always 250 ml), time logged, source ("+" button, notification, live activity). Belongs to a Day.
+- **Sip**: amount (always 250 ml), time logged, source ("+" button, notification action, notification tap, live activity). Belongs to a Day.
 - **Day**: reference date (starting at wake time), goal in force that day, total drunk, goal met (yes/no). Groups Sips.
 - **Reminder**: scheduled time, belongs to the current Day. Recomputed on every sip and cancelled when the goal is met.
 

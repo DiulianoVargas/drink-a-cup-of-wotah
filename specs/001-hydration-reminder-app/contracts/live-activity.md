@@ -62,15 +62,16 @@ directive runs in an isolated runtime and can only use `@expo/ui/swift-ui`.
 - Updates the activity on the device, even with the app terminated.
 - With the app alive: `addUserInteractionListener` (compare `event.source` with `instance.getId()`) → `reconcile()` imports `pendingSips`, logs the sips (`source: 'live_activity'`), resets `pendingSips` via `update()` and reschedules.
 - With the app terminated: the import happens on the next `reconcile()` (cold start/foreground) by reading the instance's current props. This caveat is accepted in the spec (Clarifications, FR-023, SC-005). **⚠️ Spike S2**: if the props cannot be read back, sips would be lost, and the native fallback (research R5) is adopted.
-- iOS < 17: no button. Tapping the activity opens `wotah://home` (spec edge case).
+- iOS < 17: no button. The activity is started with URL `wotah://home?sip=1`; tapping it opens the app, logs one sip (`source: 'live_activity'`) and shows the "Desfazer" toast (spec edge case, Constitution VI). After handling, Home replaces the route with `wotah://home` so a reload does not log again.
 
 ## Lifecycle
 
 | Trigger | Action |
 |---|---|
-| `AppState → active`, goal not met and `getInstances()` empty | `start(state, 'wotah://home')` (FR-021) |
+| `AppState → active`, goal not met and `getInstances()` empty | `start(state, url)` with `wotah://home?sip=1` on iOS < 17 (no interactive button), `wotah://home` on iOS 17+ (FR-021) |
 | Any sip/undo/goal change | `update(state)` (FR-024) |
 | Goal met | `update({ ...state, celebrating: true })` → `end('default', state, …)` with `after(now + 5 min)` (FR-025) |
 | Undo drops below the goal after the activity ended | new activity only on the next app open |
 | Expired (8 h) | nothing; restarts on the next app open (FR-026) |
+| Goal reached via the button while the app was terminated | activity shows the celebrating state; `reconcile()` ends it on the next app run (FR-025) |
 | Reminders turned off | the activity continues (it is independent of notifications); `nextReminderAt = null` hides the "Próximo lembrete" line |

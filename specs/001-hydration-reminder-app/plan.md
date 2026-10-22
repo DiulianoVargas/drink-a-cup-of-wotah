@@ -39,7 +39,7 @@ only if spikes S1/S2 show sips would be lost.
 
 **Constraints**: 100% offline (SC-008); no account; no push; ≤ 48 pending notifications (iOS limit: 64). The Live Activity is subject to the 8-hour limit and iOS update budgets. The widget runtime is isolated (`@expo/ui/swift-ui` only; no hooks, imports or storage). All UI text is PT-BR and all code and docs are English. Light and dark modes, Reduce Motion and Dynamic Type are supported. No analytics or telemetry.
 
-**Scale/Scope**: 1 user per device; 5 screens (3 onboarding steps + permission, Home, Settings); 1 Live Activity; 5 tables; 7-day history in the UI. The home-screen widget is deferred to v2.
+**Scale/Scope**: 1 user per device; 6 screens (onboarding: weight, goal, schedule, permission; Home; Settings); 1 Live Activity; 5 tables; 7-day history in the UI. The home-screen widget is deferred to v2.
 
 ## Constitution Check
 
@@ -49,7 +49,7 @@ Checked against `.specify/memory/constitution.md` v1.0.0.
 
 | Principle | Pre-Phase 0 | Post-Phase 1 | Evidence |
 |---|---|---|---|
-| I. Portable Domain Core | ✅ | ✅ | `src/domain` is pure with an injected clock; ports in [domain-api](./contracts/domain-api.md); single `syncSideEffects` gateway |
+| I. Portable Domain Core | ✅ | ✅ | `src/domain` is pure with an injected clock; ports in [domain-api](./contracts/domain-api.md); single `syncSideEffects` gateway; one justified exception (inline thresholds in the widget runtime), see Complexity Tracking |
 | II. Local-First, Zero Data Collection | ✅ | ✅ | SQLite on device, local notifications, LA without push; no analytics/crash SDK in the dependency list |
 | III. Expo-First, Native by Exception | ✅ | ✅ | `expo-widgets` + CNG. The Swift module is conditional on spikes S1/S2 and listed in Complexity Tracking |
 | IV. Domain Test-First | ✅ | ✅ | Spec acceptance scenarios map to table tests (R12, data-model §4); manual device scenarios in quickstart |

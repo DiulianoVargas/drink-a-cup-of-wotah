@@ -55,7 +55,7 @@ validation (spike) before work builds on them (Constitution › Development Work
 ## R5. Live Activity / Dynamic Island with `expo-widgets` ⚠️ (main risk)
 
 - **Decision**: `expo-widgets` with `createLiveActivity('WotahDay', …)`, filling the `compactLeading`, `compactTrailing`, `minimal`, `expandedLeading`/`expandedTrailing`/`expandedCenter`/`expandedBottom` and `banner` (lock screen) regions with `@expo/ui/swift-ui` components. Lifecycle:
-  - **Start**: when the app opens, if today's goal is not met and `Factory.getInstances()` is empty, call `start(props, 'wotah://home')`.
+  - **Start**: when the app opens, if today's goal is not met and `Factory.getInstances()` is empty, call `start(props, url)` with `wotah://home?sip=1` on iOS < 17 (no interactive button), `wotah://home` on iOS 17+.
   - **Update**: `instance.update(props)` on every sip logged in the app.
   - **Goal met**: `update({ celebrating: true })`, then `end('default', props)` with `after(now + 5 min)`.
   - **8-hour expiry**: accepted. The activity is restarted on the next `AppState → active`.
@@ -90,7 +90,7 @@ validation (spike) before work builds on them (Constitution › Development Work
 
 ## R8. Navigation
 
-- **Decision**: **Expo Router** (file-based), with `(onboarding)` and `(main)` groups and a redirect based on `profile.onboardingCompleted`. The deep link `wotah://home?sip=1` is reserved for tapping the Live Activity on devices without the interactive button.
+- **Decision**: **Expo Router** (file-based), with `(onboarding)` and `(main)` groups and a redirect based on `profile.onboardingCompleted`. The deep link `wotah://home?sip=1` is used as the Live Activity tap URL on iOS < 17 (no interactive button): opening it logs a sip (`source: 'live_activity'`) and shows the "Desfazer" toast, keeping logging at one tap (Constitution VI).
 - **Rationale**: it is the Expo template default. In SDK 56+ it no longer depends on React Navigation, and deep linking comes built in.
 - **Alternatives**: React Navigation directly (more configuration, no gain).
 

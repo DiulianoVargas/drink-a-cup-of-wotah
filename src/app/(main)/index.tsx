@@ -95,10 +95,10 @@ export default function Home() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Ferramentas de desenvolvimento"
-                style={[
+                style={StyleSheet.flatten([
                   styles.roundButton,
                   { backgroundColor: colors.surface, borderColor: colors.line },
-                ]}
+                ])}
               >
                 <Text style={[typography.caption, { color: colors.ink }]}>dev</Text>
               </Pressable>
@@ -108,10 +108,10 @@ export default function Home() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ajustes"
-              style={[
+              style={StyleSheet.flatten([
                 styles.roundButton,
                 { backgroundColor: colors.surface, borderColor: colors.line },
-              ]}
+              ])}
             >
               <GearIcon color={colors.ink} />
             </Pressable>

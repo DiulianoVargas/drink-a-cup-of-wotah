@@ -20,6 +20,7 @@
 - Q: Does SC-003 (no reminders after the goal) hold when the goal is reached by sips logged while the app is not running? → A: Not until the app next runs. Already-scheduled reminders may still arrive in that window; this is accepted for v1 (no native code), consistent with the answer below.
 - Q: On devices without the interactive live activity button (older OS), what does tapping the activity do? → A: It opens the app and logs a sip with the "Desfazer" toast, like tapping a reminder's body, so logging stays one tap from every entry point.
 - Q: How is a sip logged from the Live Activity or a notification action handled while the app is not running? → A: The tap is captured natively and processed when iOS wakes the app in the background (usually within seconds), exactly once; the activity, history and reminders then update. If processing is delayed, it completes the next time the app runs. (Updated 2026-10-22: a small native module was adopted because the Live Activity button cannot run JavaScript.)
+- Q: Is the animated opening screen designed in `design/Wotah Splash.html` part of v1? → A: Yes (owner request, 2026-10-22). The system splash stays static (platform limit) and hands over to an in-app animated opening screen; see FR-035.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -187,6 +188,7 @@ On Home, the user sees the last 7 days (full = goal met, partial, empty) and a c
 - **FR-032**: The entire interface and notifications MUST be in Brazilian Portuguese.
 - **FR-033**: The app MUST support the system's light and dark modes.
 - **FR-034**: The visual style MUST follow the cute/illustrated pastel style, with the bottle mascot as the central element.
+- **FR-035**: While the app starts, it MUST show an opening screen with the bottle mascot (waves moving) centered, the "wotah" wordmark and the line "Um golinho de cada vez", in the pastel style of `design/Wotah Splash.html`, and then hand over smoothly to onboarding or Home. It MUST NOT add noticeable waiting time (cold start to Home stays under 2 s), it MUST honor Reduce Motion, and it MUST support light and dark modes.
 
 ### Key Entities
 

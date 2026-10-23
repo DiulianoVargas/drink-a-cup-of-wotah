@@ -25,7 +25,7 @@ only if spikes S1/S2 show sips would be lost.
 
 **Language/Version**: TypeScript (`strict`) on React Native 0.88 / React 19.3 (Expo SDK 58; upgraded from 57 on 2026-10-22, see research R1). Swift only in the conditional fallback (`modules/wotah-native`).
 
-**Primary Dependencies**: `expo` 58, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` and `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`.
+**Primary Dependencies**: `expo` 58, `expo-router`, `expo-dev-client`, `expo-widgets` + `@expo/ui` (SwiftUI), `expo-notifications`, `expo-sqlite`, `expo-file-system`, `expo-font` + `@expo-google-fonts/fredoka` and `@expo-google-fonts/nunito`, `expo-haptics`, `react-native-svg`, `react-native-reanimated` 4, `zustand`, `expo-splash-screen` (native splash stage). Dev-only: `@resvg/resvg-js` (renders the splash PNGs, R17).
 
 **Storage**: local SQLite (`expo-sqlite`) with the database in the App Group `group.<bundleId>` (pending spike S3). Schema in [data-model.md](./data-model.md#2-persistence-sqlite-srcservicesdb). No server (FR-031).
 
@@ -35,11 +35,11 @@ only if spikes S1/S2 show sips would be lost.
 
 **Project Type**: mobile app (a single Expo app with CNG; no committed `ios/` folder).
 
-**Performance Goals**: sip animation at 60 fps on the UI thread (SC-006) and < 1.5 s in total. App, LA and next reminder consistent within 2 s of a sip while the app is running, or within 2 s of the next run otherwise (SC-005). Cold start to Home < 2 s.
+**Performance Goals**: sip animation at 60 fps on the UI thread (SC-006) and < 1.5 s in total. App, LA and next reminder consistent within 2 s of a sip while the app is running, or within 2 s of the next run otherwise (SC-005). Cold start to Home < 2 s, including the opening screen (R15: native stage until fonts load + ≥ 0.9 s animated stage + 0.28 s fade).
 
 **Constraints**: 100% offline (SC-008); no account; no push; ≤ 48 pending notifications (iOS limit: 64). The Live Activity is subject to the 8-hour limit and iOS update budgets. The widget runtime is isolated (`@expo/ui/swift-ui` only; no hooks, imports or storage). All UI text is PT-BR and all code and docs are English. Light and dark modes, Reduce Motion and Dynamic Type are supported. No analytics or telemetry.
 
-**Scale/Scope**: 1 user per device; 6 screens (onboarding: weight, goal, schedule, permission; Home; Settings); 1 Live Activity; 5 tables; 7-day history in the UI. The home-screen widget is deferred to v2.
+**Scale/Scope**: 1 user per device; an opening screen (FR-035, overlay, not a route) + 6 screens (onboarding: weight, goal, schedule, permission; Home; Settings); 1 Live Activity; 5 tables; 7-day history in the UI. The home-screen widget is deferred to v2.
 
 ## Constitution Check
 
@@ -76,6 +76,7 @@ specs/001-hydration-reminder-app/
 │   ├── domain-api.md    # pure domain API + use cases/ports
 │   ├── notifications.md # category, action, texts, idempotency
 │   ├── live-activity.md # regions, props, button, lifecycle
+│   ├── splash.md        # opening screen: native stage, AnimatedSplash phases (FR-035)
 │   └── design-tokens.md # tokens and components from Wotah Sistema.html
 ├── checklists/
 │   └── requirements.md
@@ -89,7 +90,7 @@ app.config.ts             # bundleId, plugins: expo-widgets, expo-notifications,
 eas.json                  # development / preview / production profiles
 src/
 ├── app/                  # Expo Router
-│   ├── _layout.tsx       # fonts, theme, boot (register categories, response listener, reconcile)
+│   ├── _layout.tsx       # fonts, theme, boot (register categories, response listener, reconcile), AnimatedSplash overlay
 │   ├── (onboarding)/     # weight.tsx, goal.tsx, schedule.tsx, permission.tsx
 │   └── (main)/           # index.tsx (Home), settings.tsx
 ├── domain/               # pure TS: constants, goal, day, progress, reminders, messages, format, types
@@ -102,7 +103,7 @@ src/
 ├── state/store.ts        # Zustand (derived read state + toast)
 ├── ui/
 │   ├── theme/            # tokens.ts, useTheme.ts, typography.ts
-│   └── components/       # Mascot, DropIcon, ProgressRing, PlusButton, UndoToast, WeekStrip, ...
+│   └── components/       # Mascot, DropIcon, ProgressRing, PlusButton, UndoToast, WeekStrip, AnimatedSplash, ...
 └── widgets/
     └── WotahDay.tsx      # createLiveActivity ('widget' directive)
 modules/
@@ -111,7 +112,9 @@ tests/
 ├── domain/               # table tests per FR/AS
 ├── usecases/             # with port fakes and a fixed clock
 └── ui/                   # RNTL
-assets/                   # icon (drop), splash, mascot PNGs for the LA (if S4 requires them)
+assets/                   # icon (drop), splash-mascot(-dark).png (R17), mascot PNGs for the LA (if S4 requires them)
+scripts/
+└── render-splash-image.mjs # dev-only: mascot SVG → splash PNGs (R17)
 ```
 
 **Structure Decision**: a single Expo app (mobile app) with CNG. The boundaries are `domain` (pure)
@@ -135,11 +138,12 @@ See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
 - Jest/RNTL (R12)
 - logical day (R13)
 - accessibility (R14)
+- two-stage animated opening screen (R15), native image size per platform (R16), splash PNGs rendered by a dev script (R17)
 
 ## Phase 1 — Design (complete)
 
 - [data-model.md](./data-model.md): Profile, Sip, Day, Reminder (computed), MascotExpression, SurfaceState; SQLite schema; day/window rules; reminder chain algorithm; state transitions.
-- [contracts/](./contracts/): domain-api, notifications, live-activity, design-tokens.
+- [contracts/](./contracts/): domain-api, notifications, live-activity, design-tokens, splash.
 - [quickstart.md](./quickstart.md): Mac-free setup, spikes and a manual script per user story.
 
 **Suggested order for `/speckit-tasks`**:
@@ -152,6 +156,51 @@ See [research.md](./research.md). No `NEEDS CLARIFICATION` remains. Decisions:
 6. Live Activity/US4
 7. history/US5
 8. polish: dark mode, Reduce Motion, accessibility, icon/splash
+
+## Increment — Opening screen (FR-035, 2026-10-22)
+
+Input: "Fazer a splash screen utilizando a `design/Wotah Splash.html`". The spec gained FR-035 and a
+clarification (Constitution VII: designed items must be in the spec before they are built).
+
+**Approach** ([research.md](./research.md) R15–R17, [contracts/splash.md](./contracts/splash.md)):
+the OS splash stays static (a pre-rendered mascot on `bg`) and hands over, frame-identical, to an
+`AnimatedSplash` overlay in `src/app/_layout.tsx`. The overlay animates into the design layout
+(gradient, glow, mascot with moving waves, wordmark, tagline, pulsing dots) and fades out onto the
+already-mounted onboarding/Home once boot is ready.
+
+**Data model**: no change. The splash reads only the existing store flag `ready`; it has no
+persisted state or entities. Its phase machine lives in the contract.
+
+**Files touched**: `app.config.ts` (splash plugin image/sizes), `assets/images/splash-mascot*.png`
+(new), `scripts/render-splash-image.mjs` (new), `package.json` (devDependency
+`@resvg/resvg-js`), `src/ui/theme/tokens.ts` (splash tokens), `src/ui/components/AnimatedSplash.tsx`
+(new), `src/app/_layout.tsx` (overlay + hide timing), `tests/ui/AnimatedSplash.test.tsx` (new).
+A native rebuild is required (splash plugin config).
+
+**Constitution Check (increment)**:
+
+| Principle | Pre-research | Post-design | Evidence |
+|---|---|---|---|
+| I. Portable Domain Core | ✅ | ✅ | UI only; no rule moves out of `src/domain` |
+| II. Local-First | ✅ | ✅ | no network, no data |
+| III. Expo-First | ✅ | ✅ | `expo-splash-screen` config plugin + CNG; no native code |
+| IV. Domain Test-First | ✅ | ✅ | no domain change; RNTL test for the overlay timing; manual scenario 12 |
+| V. Design System Fidelity | ✅ | ✅ | tokens added to design-tokens.md and consumed via `useTheme()`; reuses `Mascot`. Divergences noted below |
+| VI. Kind, Accessible PT-BR | ✅ | ✅ | PT-BR copy from the design; Reduce Motion cross-fade; single VoiceOver label; capped font scale |
+| VII. Simplicity | ✅ | ✅ | no runtime dependency; one dev-only tool justified in R17; spec updated first (FR-035) |
+
+Result: **PASS**.
+
+**Design divergences** (Constitution V):
+- Dark mode is not in `Wotah Splash.html`; the dark gradient values are proposed (R15) and must be
+  confirmed by the owner on device.
+- The enter animation (mascot growing from the native size and lifting into place) is not in the
+  design. It exists only to make the hand-off from the static OS splash seamless.
+- The design's three dots are static; they pulse here as a loading cue (static with Reduce Motion).
+
+**Suggested tasks** (for `/speckit-tasks`): render the PNGs and update the splash config → tokens
+→ `AnimatedSplash` (+ RNTL test) → wire it into `_layout.tsx` → rebuild (Android dev/preview;
+iOS once the paid Apple account exists) → quickstart scenario 12.
 
 ## Complexity Tracking
 

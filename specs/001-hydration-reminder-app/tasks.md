@@ -308,7 +308,7 @@ to the animated screen with no jump or blank frame, then fades into onboarding o
 
 ### Device validation
 
-- [ ] T113 Rebuild, since the splash plugin config changed: `npx eas-cli build -p android --profile preview` (the native stage is only reliable on preview/release builds, quickstart scenario 12) and, for day-to-day work, `npx eas-cli build -p android --profile development`. iOS waits for the paid Apple account (same constraint as T008)
+- [X] T113 Rebuild, since the splash plugin config changed: `npx eas-cli build -p android --profile preview` (the native stage is only reliable on preview/release builds, quickstart scenario 12) and, for day-to-day work, `npx eas-cli build -p android --profile development`. iOS waits for the paid Apple account (same constraint as T008)
 - [ ] T114 Run quickstart scenario 12 on Android in light, dark and Reduce Motion modes, and when returning from the background. Confirm the bottle is not cropped by the circular mask, the hand-off has no jump, and cold start to Home is < 2 s. Record the result and the owner's confirmation of the dark gradient under research.md › R15 (adjust `splashTop`/`splashBottom` dark values in `src/ui/theme/tokens.ts` and contracts/design-tokens.md if the owner asks)
 - [ ] T115 Once an iOS build is possible, repeat scenario 12 on the iPhone (folded into T098's full quickstart run)
 

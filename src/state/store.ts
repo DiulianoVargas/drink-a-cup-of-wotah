@@ -1,0 +1,51 @@
+import { create } from 'zustand';
+import type { WeekDay } from '@/domain/history';
+import type { Profile, TodayState } from '@/domain/types';
+import type { Published, StateSink } from '@/usecases/app';
+
+type WotahState = {
+  ready: boolean;
+  profile: Profile | null;
+  today: TodayState | null;
+  nextReminderAt: number | null;
+  week: WeekDay[];
+  streak: number;
+  /** Increments every time the "Desfazer" toast should (re)appear. */
+  undoToastKey: number;
+  /** Increments every time the day reaches its goal. */
+  celebrateKey: number;
+  /** OS notification permission (refreshed on boot and foreground). */
+  permission: 'granted' | 'denied' | 'undetermined';
+};
+
+/** Read-only view of the database for the UI; rebuilt by every sync (research R7). */
+export const useWotahStore = create<WotahState>(() => ({
+  ready: false,
+  profile: null,
+  today: null,
+  nextReminderAt: null,
+  week: [],
+  streak: 0,
+  undoToastKey: 0,
+  celebrateKey: 0,
+  permission: 'undetermined',
+}));
+
+export const storeSink: StateSink = {
+  publish(p: Published) {
+    useWotahStore.setState({
+      ready: true,
+      profile: p.profile,
+      today: p.today,
+      nextReminderAt: p.nextReminderAt,
+      week: p.week,
+      streak: p.streak,
+    });
+  },
+  requestUndoToast() {
+    useWotahStore.setState((s) => ({ undoToastKey: s.undoToastKey + 1 }));
+  },
+  requestCelebration() {
+    useWotahStore.setState((s) => ({ celebrateKey: s.celebrateKey + 1 }));
+  },
+};

@@ -141,6 +141,71 @@ validation (spike) before work builds on them (Constitution › Development Work
 - **Rationale**: the constitution sets the "essential" accessibility bar as a gate.
 - **Alternatives**: none; this is a non-negotiable minimum.
 
+## R15. Animated opening screen (FR-035, `design/Wotah Splash.html`)
+
+- **Context**: the design shows the mascot (60% full, "animada", waves moving), the "wotah"
+  wordmark (Fredoka 600, 52), the tagline "Um golinho de cada vez" (Nunito 700, 16, `ink2`), a
+  vertical pastel gradient (`#E3F4F9` → `#F3F9FB` at 55% → `#FDEDE6`), a soft water-colored radial
+  glow behind the bottle and three loading dots (`#86CDE3`, opacity 1 / .55 / .25) 64 pt from the
+  bottom. The system splash (`expo-splash-screen`) can only show **one static image on a solid
+  color** (iOS storyboard; Android 12+ `SplashScreen` API): no gradient, text layout or animation.
+- **Decision**: a **two-stage splash**.
+  1. **Native stage** (static, config plugin): solid `bg` (`#F3F9FB` / `#121D25`, as today) with a
+     pre-rendered PNG of the mascot exactly as the first animation frame (level 0.6, `excited`,
+     waves at phase 0), centered.
+  2. **In-app stage** (`AnimatedSplash`, React overlay above the navigator in
+     `src/app/_layout.tsx`): its first frame matches the native image (same size and position over
+     the same solid color), then the gradient and glow fade in, the mascot scales/lifts into the
+     design position and the wordmark, tagline and pulsing dots fade in. When the app is ready the
+     overlay fades out, revealing onboarding or Home already mounted underneath (no blank frame).
+  - The native stage is held only until fonts are loaded (the wordmark needs Fredoka); the DB/boot
+    work continues behind the in-app stage. `SplashScreen.hide()` is called from the overlay's
+    first `onLayout`, so the hand-off never shows an empty frame.
+  - Reuses the existing `Mascot` component (waves already loop; Reduce Motion already pauses them),
+    `react-native-svg` for the gradient/glow and Reanimated for the transitions. **No new runtime
+    dependency.**
+- **Timing**: enter 450 ms; the overlay stays at least 900 ms after mounting (so it never flashes)
+  and leaves with a 280 ms fade as soon as `ready` is true. Fonts (~0.1–0.3 s) + 0.9 s + 0.28 s keeps
+  cold start to Home under the 2 s target (plan › Performance Goals).
+- **Reduce Motion**: no scale/lift and no pulsing; the content cross-fades into the final layout
+  and the dots stay at the design's static opacities (Constitution VI allows fades).
+- **Dark mode** (Constitution V; the design file is light-only): same layout with desaturated
+  tokens — gradient `splashTop` `#172631` → `bg` `#121D25` → `splashBottom` `#241F23`, glow `water`
+  at 25%, dots `plusButton`. Owner confirms on device (quickstart scenario 12).
+- **Rationale**: the only way to match an animated design while the OS shows a static splash is to
+  make the first in-app frame identical to the static image (the pattern of Expo's
+  `with-splash-screen` example). A JS overlay keeps all the art in the same SVG/Reanimated stack
+  as the rest of the app.
+- **Alternatives**: (a) static splash only, with the full composition baked into one image — no
+  animation, text inside a bitmap, and Android 12+ crops it to a circle (see R16); (b) Lottie/Rive
+  splash — new dependency and redrawing the mascot (rejected in R9); (c) a separate `/splash`
+  route — navigation flicker and the guard redirects of `Stack.Protected` would fight it.
+
+## R16. Native splash image size per platform
+
+- **Decision**: one image file, two sizes: iOS `imageWidth: 180` (the design's 180 × 222 pt);
+  Android `android.imageWidth: 120`. The in-app stage starts at the platform's native size and
+  scales to 180 during the enter animation.
+- **Rationale**: the installed plugin (expo-splash-screen 58.0.11,
+  `withAndroidSplashImages.js`) draws the image on a 288 dp canvas, and Android 12+ masks the icon
+  to a circle of about 192 dp. The full mascot box (260 × 320 viewBox units, diagonal ≈ 412) fits
+  that circle only at ≈ 121 dp wide. iOS has no mask.
+- **Alternatives**: `android.drawable` with a custom vector (needs hand-written XML for the whole
+  mascot); accepting the crop (cuts the cap and feet).
+
+## R17. Producing the splash PNGs
+
+- **Decision**: `scripts/render-splash-image.mjs` renders the mascot SVG (same paths as
+  `src/ui/components/Mascot.tsx`, level 0.6, `excited`, wave phase 0) to
+  `assets/images/splash-mascot.png` (light glass/water) and `splash-mascot-dark.png` (dark tokens)
+  at 3× (540 px wide, transparent). It uses **`@resvg/resvg-js` as a devDependency** (dev-only, not
+  in the app bundle). The PNGs are committed, and the script is re-run only when the mascot art
+  changes.
+- **Rationale**: no Mac or design tool is needed, and the output is reproducible from the
+  same source paths.
+- **Alternatives**: exporting by hand from the browser (not reproducible); `sharp` (heavier
+  native install on Windows).
+
 ## Required spikes (first implementation tasks)
 
 | ID | Question | How to validate | If it fails |
@@ -157,6 +222,7 @@ validation (spike) before work builds on them (Constitution › Development Work
 - [expo/expo#49828](https://github.com/expo/expo/issues/49828) · [expo-live-activity-recorder (community example)](https://github.com/seniormobiledev/expo-live-activity-recorder)
 - [expo-notifications (SDK 57)](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/) · [Forum: background responses](https://forums.expo.dev/t/background-and-killed-push-notification-response-handling/55368)
 - [Apple: Configuring app groups](https://developer.apple.com/documentation/xcode/configuring-app-groups)
+- [expo-splash-screen (SDK 58)](https://docs.expo.dev/versions/v58.0.0/sdk/splash-screen/) · installed plugin source `node_modules/expo-splash-screen/plugin/build/` (58.0.11)
 
 ## Implementation findings (2026-10-22, from installed `expo-widgets` 57.0.27 source)
 

@@ -32,6 +32,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
@@ -54,6 +55,7 @@
     "format": "prettier --write .",
     "doctor": "npx expo-doctor",
     "check:privacy": "node scripts/check-no-telemetry.mjs",
+    "render:splash": "node scripts/render-splash-image.mjs",
     "go": "expo start --go"
   },
   "private": true

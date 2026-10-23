@@ -2,7 +2,8 @@
 
 **Source of truth** (Constitution V): `design/Wotah Sistema.html` (tokens, typography, mascot, mini icon).
 **Visual reference** (layout and states, not tokens): `design/Wotah Telas.html`,
-`design/Wotah Live Activity.html`, `design/Wotah Widgets.html` (widgets are v2).
+`design/Wotah Live Activity.html`, `design/Wotah Splash.html` (opening screen, [splash.md](./splash.md)),
+`design/Wotah Widgets.html` (widgets are v2).
 
 > The HTML files are bundles. To inspect the source, extract `<script type="__bundler/template">`
 > and the `__bundler/manifest` entries (base64 + gzip). The `Mascote` component is the ~9.5 KB
@@ -32,6 +33,17 @@ Implementation: `src/ui/theme/tokens.ts` (values) + `src/ui/theme/useTheme.ts` (
 
 Fixed mascot colors (same in both themes): cap `#FFC9B6` (stripes `#E9A08A`), cheeks `#F6A9BF`,
 tongue `#F4A0B4`, radial glow `#FFE2CC`, drop eyes on black surfaces `#12303D`.
+
+### Splash (`design/Wotah Splash.html`; dark values proposed, R15)
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `splashTop` | `#E3F4F9` | `#172631` | gradient top (→ `bg` at 55%) |
+| `splashBottom` | `#FDEDE6` | `#241F23` | gradient bottom |
+| `splashGlowOpacity` | `0.45` | `0.25` | radial glow of `water` behind the mascot |
+
+`splashTop`/`splashBottom` are color tokens. `splashGlowOpacity` is a number, so it is exported
+separately from `src/ui/theme/tokens.ts` as `{ light, dark }` (`ColorTokens` holds only strings).
 
 Design principle: "In dark mode, the same tones lose brightness instead of gaining saturation."
 No neon.
@@ -74,6 +86,7 @@ All text roles scale with Dynamic Type up to the large (non-accessibility) sizes
 | `Stepper` | goal − / + (250 ml) | `valueMl`, `onChange` |
 | `WheelPicker` | weight (30–250) and times (30-minute steps) | `values`, `value`, `onChange` |
 | `SuggestGoalCard` | mint card in Settings | `suggestedMl`, `onAccept`, `onKeep` |
+| `AnimatedSplash` | opening screen (Splash) | `ready`, `onDone` ([splash.md](./splash.md)) |
 | `Pill` | "Bebi 💧"/primary buttons | `label`, `tone` |
 
 Rule: screens and components use tokens **only** via `useTheme()`. Raw hex values are allowed only

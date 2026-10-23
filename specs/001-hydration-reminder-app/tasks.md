@@ -274,6 +274,46 @@ in-process event that JS misses when the app was killed). Business rules stay in
 
 ---
 
+## Phase 10: Opening screen (FR-035) — added 2026-10-22
+
+**Purpose**: the animated opening screen from `design/Wotah Splash.html`, using the two-stage
+approach in plan.md › Increment — Opening screen. Contract: [contracts/splash.md](./contracts/splash.md).
+Decisions: research R15 (two stages, timing, Reduce Motion, dark), R16 (image size per
+platform), R17 (PNG rendering). It applies to every cold start, so it has no user-story label.
+
+**Independent test**: kill the app and open it on a preview build. The static bottle hands over
+to the animated screen with no jump or blank frame, then fades into onboarding or Home in < 2 s
+(quickstart scenario 12).
+
+### Native stage (static OS splash)
+
+- [X] T104 Add the dev-only renderer with `npx expo install @resvg/resvg-js -- --save-dev` (it must land in `devDependencies` of `package.json` and never be imported from `src/`; research R17); confirm `node scripts/check-no-telemetry.mjs` still passes
+- [X] T105 Create `scripts/render-splash-image.mjs` and the npm script `"render:splash": "node scripts/render-splash-image.mjs"` in `package.json`. It builds an SVG string (viewBox `-30 -30 260 320`, transparent background) with the mascot's **first animation frame**, copying the path data verbatim from `src/ui/components/Mascot.tsx` (header comment: "keep in sync with Mascot.tsx"): `excited` arms (`M33 182 q-22 -2 -32 -20`, `M167 182 q22 -2 32 -20`), feet, `BOTTLE` filled with the glass color, the water group clipped to `BOTTLE` and translated by `waterY(0.6) = 278 − 0.6 × 214 = 149.6` with `WAVE_BACK` at translateX 0 and `WAVE_FRONT` at translateX −100, the outline, highlight, cap and stripes, cheeks at opacity 0.85 and the `excited` face. No glow, confetti or sparkles. It renders twice at 540 px wide with `@resvg/resvg-js`: `assets/images/splash-mascot.png` (glass `#FFFFFF`, water `#9FD8EA`, waveBack `#C4EAF4`) and `assets/images/splash-mascot-dark.png` (glass `#D3E6EC`, water `#7FBFD4`, waveBack `#A6D3E0`); fixed character colors come from `mascotColors` in `src/ui/theme/tokens.ts`
+- [X] T106 Run `npm run render:splash`, open both PNGs and compare them with the mascot on Home at 60% (same art, same wave phase); commit the PNGs
+- [X] T107 Update the `expo-splash-screen` plugin entry in `app.config.ts` exactly as in contracts/splash.md §1: `backgroundColor: '#F3F9FB'`, `image: './assets/images/splash-mascot.png'`, `imageWidth: 180`, `dark: { backgroundColor: '#121D25', image: './assets/images/splash-mascot-dark.png' }`, `android: { imageWidth: 120 }` (R16). Delete `assets/images/splash-icon.png`, which this makes unused (only `app.config.ts` referenced it)
+
+### In-app stage (AnimatedSplash)
+
+- [X] T108 [P] Add the splash tokens from contracts/design-tokens.md › Splash to both `lightColors` and `darkColors` in `src/ui/theme/tokens.ts`: `splashTop` (`#E3F4F9` / `#172631`), `splashBottom` (`#FDEDE6` / `#241F23`) and `splashGlowOpacity` (`0.45` / `0.25`, a number; the glow color is the `water` token). Check that `tests/ui/contrast.test.ts` still type-checks, since `ColorTokens` is `typeof lightColors`
+- [X] T109 [P] Write `tests/ui/AnimatedSplash.test.tsx` first (it must fail), following the patterns in `tests/ui/UndoToast.test.tsx` (fake timers) and `tests/ui/Mascot.test.tsx`. Mock `expo-splash-screen` (`hide: jest.fn()`). Assert that: (1) the root has `accessibilityLabel` "Wotah, carregando"; (2) `SplashScreen.hide` is called once after the first layout; (3) with `ready` true at mount, `onDone` is NOT called before 900 ms and is called exactly once after 900 + 280 ms; (4) with `ready` false, `onDone` is never called, and flipping `ready` to true later calls it once after the 280 ms fade; (5) cases 3–4 hold with `useReducedMotion` mocked to `true`
+- [X] T110 Implement `src/ui/components/AnimatedSplash.tsx` (`{ ready: boolean; onDone: () => void }`) per contracts/splash.md §2 so T109 passes:
+  - **Layout**: absolute full-screen overlay. A solid `colors.bg` base, then an `Svg` layer with a vertical `LinearGradient` (`splashTop` 0 → `bg` 0.55 → `splashBottom` 1) and a 420 pt `RadialGradient` glow (`water` at `splashGlowOpacity` → 0 at 65%) whose center is 50 pt above the screen center. A centered content column (`gap` 22, `paddingBottom` 60) holds `<Mascot level={0.6} expression="excited" width={180} />`, "wotah" (`fonts.fredokaSemiBold`, 52, `lineHeight` 52, `letterSpacing` −0.5, `ink`) and "Um golinho de cada vez" (`fonts.nunitoBold`, 16, `ink2`) with `gap` 6, both with `maxFontSizeMultiplier={MAX_FONT_SCALE}`. Three 9 × 9 dots (radius 5, `gap` 8, `plusButton`) sit 64 pt above the bottom safe-area inset. Tokens come only from `useTheme()`.
+  - **First frame and hand-off**: measure the mascot wrapper with `onLayout`, then set its initial transform so it matches the native image: `translateY = windowHeight / 2 − mascotCenterY`, `scale = (Platform.OS === 'android' ? 120 : 180) / 180`. Keep the gradient, glow, texts and dots at opacity 0. Call `SplashScreen.hide()` once, in a `requestAnimationFrame` after that transform is applied.
+  - **Enter, full motion**: gradient and glow opacity 0 → 1 over 300 ms; mascot transform → identity over 450 ms (`Easing.out(Easing.cubic)`); texts and dots opacity 0 → 1 with translateY 8 → 0 over 350 ms after a 150 ms delay. Then the dots pulse forever in sequence (opacity .25 → 1, 900 ms cycle, 150 ms stagger).
+  - **Enter, Reduce Motion** (`useReducedMotion`): no transform. All layers cross-fade to the final layout in 250 ms, and the dots stay static at 1 / .55 / .25.
+  - **Exit**: once `ready` is true, entering has ended and ≥ 900 ms have passed since mount, fade the overlay opacity 1 → 0 over 280 ms, then call `onDone` exactly once (via `scheduleOnRN`/`runOnJS`, matching the project's Reanimated 4 usage). Set `pointerEvents="none"` while leaving.
+  - **Accessibility**: the root is `accessible` with `accessibilityRole="image"`, `accessibilityLabel="Wotah, carregando"` and `accessibilityViewIsModal`; children use `importantForAccessibility="no-hide-descendants"`.
+- [X] T111 Wire the overlay into `src/app/_layout.tsx`: keep the module-scope `SplashScreen.preventAutoHideAsync()`; remove the effect that calls `SplashScreen.hideAsync()` (AnimatedSplash hides the native stage now); render nothing until `fontsLoaded`. After that, render the `Stack` (with its current `Stack.Protected` guards) once `ready` is true, and render `<AnimatedSplash ready={ready} onDone={() => setSplashDone(true)} />` absolutely on top until `splashDone`. The overlay must sit above the navigator so the exit fade reveals onboarding or Home. Keep `StatusBar` as is
+- [X] T112 Run `npm test` and fix any existing UI test that renders the root layout or relied on `hideAsync` (e.g. `tests/ui/homeDeepLink.test.tsx`, `tests/ui/onboarding.test.tsx`), then `npm run typecheck`, `npm run lint` and `npx expo-doctor`; all must pass
+
+### Device validation
+
+- [ ] T113 Rebuild, since the splash plugin config changed: `npx eas-cli build -p android --profile preview` (the native stage is only reliable on preview/release builds, quickstart scenario 12) and, for day-to-day work, `npx eas-cli build -p android --profile development`. iOS waits for the paid Apple account (same constraint as T008)
+- [ ] T114 Run quickstart scenario 12 on Android in light, dark and Reduce Motion modes, and when returning from the background. Confirm the bottle is not cropped by the circular mask, the hand-off has no jump, and cold start to Home is < 2 s. Record the result and the owner's confirmation of the dark gradient under research.md › R15 (adjust `splashTop`/`splashBottom` dark values in `src/ui/theme/tokens.ts` and contracts/design-tokens.md if the owner asks)
+- [ ] T115 Once an iOS build is possible, repeat scenario 12 on the iPhone (folded into T098's full quickstart run)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -287,6 +327,7 @@ in-process event that JS misses when the app was killed). Business rules stay in
 - **US5 (Phase 7)**: after Foundational; independent of US2–US4.
 - **Polish (Phase 8)**: after the desired stories.
 - **Phase 9**: only if spikes fail; after US3 (T099–T101) and US4 (T102–T103).
+- **Phase 10 (opening screen)**: independent of the user stories (the app shell from T029 already exists). Order: T104 → T105 → T106 → T107; T108 and T109 can run in parallel with T104–T107; T110 needs T108 and T109; T111 needs T110; T112 needs T107 and T111; T113 needs T112; T114 needs T113; T115 needs an iOS build (T008).
 
 ### User Story Dependencies
 
@@ -307,6 +348,7 @@ in-process event that JS misses when the app was killed). Business rules stay in
 - Foundational: T011–T013 together; T015 with T014; T020–T022 together; T027–T028 together.
 - Each story's test tasks marked [P] run together, followed by [P] implementation tasks on distinct files.
 - After Foundational, US1, US4 and US5 can be developed in parallel; US2 and US3 follow US1 in practice because of shared screens.
+- Phase 10: T108 (tokens) and T109 (failing test) in parallel with the native-stage chain T104 → T107.
 
 ---
 

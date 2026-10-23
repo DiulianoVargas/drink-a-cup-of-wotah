@@ -26,6 +26,9 @@ export const lightColors = {
   toastInk: '#F3F9FB',
   toastAccent: '#CDEEF6',
   scrim: 'rgba(43,70,86,0.22)',
+  // Opening screen, design/Wotah Splash.html (contracts/splash.md).
+  splashTop: '#E3F4F9',
+  splashBottom: '#FDEDE6',
 };
 
 export type ColorTokens = typeof lightColors;
@@ -55,7 +58,13 @@ export const darkColors: ColorTokens = {
   toastInk: '#14232C',
   toastAccent: '#2B6E86',
   scrim: 'rgba(0,0,0,0.45)',
+  // Not in the design file; proposed in research R15, confirmed on device (T114).
+  splashTop: '#172631',
+  splashBottom: '#241F23',
 };
+
+/** Opacity of the `water` glow behind the splash mascot (kept out of ColorTokens: colors are strings). */
+export const splashGlowOpacity = { light: 0.45, dark: 0.25 };
 
 /** Fixed character colors: identical in both themes. */
 export const mascotColors = {

@@ -30,10 +30,13 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
+        // First frame of AnimatedSplash (contracts/splash.md §1); images from `npm run render:splash`.
         backgroundColor: '#F3F9FB',
-        dark: { backgroundColor: '#121D25' },
-        image: './assets/images/splash-icon.png',
-        imageWidth: 96,
+        image: './assets/images/splash-mascot.png',
+        imageWidth: 180,
+        dark: { backgroundColor: '#121D25', image: './assets/images/splash-mascot-dark.png' },
+        // Android 12+ masks the icon to a ~192 dp circle; 120 keeps the whole bottle inside (R16).
+        android: { imageWidth: 120 },
       },
     ],
     [
